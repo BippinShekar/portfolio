@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bippin Shekar Goud — AI Engineer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #000;
+      --border:   rgba(255,255,255,0.07);
+      --border-h: rgba(255,255,255,0.18);
+      --white:    #ffffff;
+      --off:      #e8e8e8;
+      --mid:      #888;
+      --dim:      #444;
+      --serif:    'Playfair Display', Georgia, serif;
+      --sans:     'Montserrat', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+      font-weight: 300;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--dim); }
+
+    #neural-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    section { position: relative; z-index: 1; }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2.5rem;
+    }
+
+    .sec-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 0.6rem;
+    }
+
+    .sec-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 3.5rem;
+      line-height: 1.1;
+    }
+
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 2.5rem 6rem;
+    }
+
+    .hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-name {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--white);
+      margin-bottom: 1.4rem;
+    }
+
+    .hero-role {
+      font-family: var(--serif);
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      font-style: italic;
+      color: var(--mid);
+      margin-bottom: 2rem;
+      min-height: 2rem;
+      font-weight: 400;
+    }
+
+    .typed-cursor {
+      font-style: normal;
+      color: var(--white);
+      animation: blink 0.9s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--mid);
+      max-width: 520px;
+      margin-bottom: 3rem;
+      line-height: 1.9;
+      font-weight: 300;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 5rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.7rem 1.8rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-solid {
+      background: var(--white);
+      color: var(--bg);
+    }
+    .btn-solid:hover {
+      background: var(--off);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--mid);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      border-color: var(--border-h);
+      color: var(--white);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+    }
+
+    .stat-cell {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 1.6rem 1.2rem;
+    }
+
+    .stat-num {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-desc {
+      font-size: 0.72rem;
+      color: var(--dim);
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    #experience { padding: 7rem 2.5rem; }
+
+    .exp-block {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 2.5rem;
+      transition: border-color 0.3s;
+    }
+    .exp-block:last-child { border-bottom: 1px solid var(--border); }
+    .exp-block:hover { border-top-color: var(--border-h); }
+
+    .exp-company {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 0.35rem;
+    }
+
+    .exp-role {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 1.2rem;
+      line-height: 1.2;
+    }
+
+    .exp-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .exp-bullets li {
+      font-size: 0.88rem;
+      color: var(--mid);
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.7;
+    }
+
+    .exp-bullets li::before {
+      content: '–';
+      position: absolute;
+      left: 0;
+      color: var(--dim);
+    }
+
+    .exp-desc {
+      font-size: 0.95rem;
+      color: var(--mid);
+      line-height: 1.9;
+      font-weight: 300;
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 2rem 2.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    footer p {
+      font-size: 0.72rem;
+      color: var(--dim);
+      letter-spacing: 0.04em;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .exp-block { grid-template-columns: 1fr; gap: 1rem; }
+    }
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="neural-canvas"></canvas>
+
+  <section id="hero">
+    <div class="hero-inner">
+
+      <h1 class="hero-name">Desham Bippin Shekar Goud</h1>
+
+      <p class="hero-role">
+        <span id="typed-text"></span><span class="typed-cursor">|</span>
+      </p>
+
+      <p class="hero-desc">
+        Founder &amp; Engineer building scalable agentic AI systems.
+        I actualize concepts into production-grade AI infrastructure —
+        from multi-agent orchestration engines to enterprise LLM platforms operating at scale.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#experience" class="btn btn-solid">Systems Built</a>
+        <a href="mailto:bippinshekar@gmail.com" class="btn btn-ghost">Email</a>
+        <a href="tel:+919100863981" class="btn btn-ghost">+91 9100 863 981</a>
+      </div>
+
+      <div class="stats-row fade-in">
+        <div class="stat-cell">
+          <div class="stat-num">40%</div>
+          <div class="stat-desc">Latency reduction</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num">33×</div>
+          <div class="stat-desc">Throughput increase</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num">100K+</div>
+          <div class="stat-desc">Inputs/day processed</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num">17%</div>
+          <div class="stat-desc">T2SQL accuracy uplift</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num">$500K+</div>
+          <div class="stat-desc">Enterprise pipeline</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="building">
+    <div class="wrap">
+
+      <p class="sec-eyebrow">Building</p>
+      <h2 class="sec-title">
+        <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:inherit;">Heuretos</a><sup style="font-size:0.7rem; color:var(--white); margin-left:0.25em; vertical-align:top; position:relative; top:0.15em;">↗</sup>
+      </h2>
+
+      <p class="exp-role fade-in" style="margin-bottom: 1rem;">AI-Native Knowledge Infrastructure</p>
+      <p class="exp-desc fade-in" style="max-width: 640px;">
+        Heuretos is the structured understanding layer between information and execution.
+        It transforms raw information into dialogue-driven reasoning, adapts to how you think,
+        and compounds knowledge over time — proactively surfacing what matters as the world evolves.
+        Built to become the default platform for research and knowledge compounding in the AI era.
+      </p>
+
+    </div>
+  </section>
+
+  <section id="experience">
+    <div class="wrap">
+
+      <p class="sec-eyebrow">Systems Built</p>
+      <h2 class="sec-title">Production Systems</h2>
+
+      <div class="exp-block fade-in">
+        <div>
+          <div class="exp-company">Pulsegen.io</div>
+        </div>
+        <div>
+          <div class="exp-role">Founding AI Engineer — Agentic Copilot</div>
+          <ul class="exp-bullets">
+            <li>Architected and deployed an agentic AI copilot transforming raw customer feedback into structured intelligence.</li>
+            <li>Engineered backend VoC ingestion and deduplication pipelines scaling to 100K+ inputs/day.</li>
+            <li>Reduced end-to-end latency by 40% through retrieval and memory optimization.</li>
+            <li>Owned full lifecycle: architecture, infra, evaluation, iteration.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="exp-block fade-in">
+        <div>
+          <div class="exp-company">8bit.ai</div>
+        </div>
+        <div>
+          <div class="exp-role">Founding AI Engineer — Neutrino Platform</div>
+          <ul class="exp-bullets">
+            <li>Designed and built Neutrino, a full-stack generative AI enterprise insights system.</li>
+            <li>Architected multi-agent orchestration routing between T2SQL, RAG, workflow agents, and live research.</li>
+            <li>Improved T2SQL accuracy by 17% via metadata-aware prompting and LoRA fine-tuning.</li>
+            <li>Built hybrid RAG infrastructure reducing search time by 20%.</li>
+            <li>Drove $500K+ enterprise lead pipeline impact.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <p>Desham Bippin Shekar Goud &nbsp;·&nbsp; Founder &amp; AI Systems Architect</p>
+    <p>
+      <a href="mailto:bippinshekar@gmail.com" style="color:var(--dim);">bippinshekar@gmail.com</a>
+      &nbsp;·&nbsp;
+      <a href="tel:+919100863981" style="color:var(--dim);">+91 9100 863 981</a>
+      &nbsp;·&nbsp; © 2026
+    </p>
+  </footer>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('neural-canvas');
+      const ctx    = canvas.getContext('2d');
+      let W, H, nodes;
+      const N       = 55;
+      const MAX_D   = 170;
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      function init() {
+        nodes = Array.from({ length: N }, () => {
+          const vx = (Math.random() - 0.5) * 0.3;
+          const vy = (Math.random() - 0.5) * 0.3;
+          return { x: Math.random() * W, y: Math.random() * H, vx, vy, bvx: vx, bvy: vy, r: Math.random() * 1.5 + 0.5 };
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const dx = nodes[i].x - nodes[j].x;
+            const dy = nodes[i].y - nodes[j].y;
+            const d  = Math.sqrt(dx * dx + dy * dy);
+            if (d < MAX_D) {
+              const t = 1 - d / MAX_D;
+              ctx.strokeStyle = `rgba(160,160,160,${t * 0.28})`;
+              ctx.lineWidth   = 0.7;
+              ctx.beginPath();
+              ctx.moveTo(nodes[i].x, nodes[i].y);
+              ctx.lineTo(nodes[j].x, nodes[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        for (const n of nodes) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(200,200,200,0.55)';
+          ctx.fill();
+        }
+      }
+
+      const mouse = { x: -9999, y: -9999 };
+      window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+      const REPEL_R = 110, REPEL_F = 0.55, MAX_SPD = 2.2;
+
+      function update() {
+        for (const n of nodes) {
+          const dx = n.x - mouse.x, dy = n.y - mouse.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < REPEL_R && d > 0) {
+            const force = (1 - d / REPEL_R) * REPEL_F;
+            n.vx += (dx / d) * force;
+            n.vy += (dy / d) * force;
+            const spd = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+            if (spd > MAX_SPD) { n.vx = (n.vx / spd) * MAX_SPD; n.vy = (n.vy / spd) * MAX_SPD; }
+          }
+          /* damping — bleed excess speed back toward base drift */
+          n.vx += (n.bvx - n.vx) * 0.012;
+          n.vy += (n.bvy - n.vy) * 0.012;
+          n.x += n.vx;
+          n.y += n.vy;
+          if (n.x < 0 || n.x > W) { n.vx *= -1; n.bvx *= -1; }
+          if (n.y < 0 || n.y > H) { n.vy *= -1; n.bvy *= -1; }
+        }
+      }
+
+      function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+      window.addEventListener('resize', () => { resize(); init(); });
+      resize(); init(); loop();
+    })();
+
+    /* ── Typewriter ── */
+    (function () {
+      const phrases = [
+        'Founder',
+        'AI Systems Engineer',
+      ];
+      const el = document.getElementById('typed-text');
+      let pi = 0, ci = 0, del = false;
+
+      function tick() {
+        const p = phrases[pi];
+        if (!del) {
+          el.textContent = p.slice(0, ++ci);
+          if (ci === p.length) { del = true; setTimeout(tick, 2000); return; }
+        } else {
+          el.textContent = p.slice(0, --ci);
+          if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
+        }
+        setTimeout(tick, del ? 40 : 80);
+      }
+      tick();
+    })();
+
+    /* ── Scroll reveal ── */
+    (function () {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+    })();
+  </script>
+</body>
+</html>
