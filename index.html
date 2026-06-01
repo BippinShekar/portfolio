@@ -925,17 +925,20 @@
       const ctx    = canvas.getContext('2d');
       let W, H, SCALE, CY;
 
-      const RINGS    = 34;
-      const SPOKES   = 28;
-      const DEPTH    = 6.0;
-      const SPEED    = 0.17;
-      /* TILT=-0.75 (43°). CAM_DIST=2.0 keeps every ring-point denominator >0.6,
-         preventing the "half ring" projection artefact at CAM_DIST=1.0          */
-      const TILT     = -0.75;
-      const CAM_DIST = 2.0;
+      /* RING_SEGS controls circle smoothness (180 pts ≈ no visible edges).
+         SPOKES controls how many radial grid lines there are — keep at 24.  */
+      const RING_SEGS = 180;
+      const RINGS     = 28;
+      const SPOKES    = 24;
+      const DEPTH     = 7.0;
+      const SPEED     = 0.17;
+      /* TILT -0.55 (31°), CAM_DIST 1.5: outer ring 21% off each side,
+         all denominators stay above 0.71 — no half-ring artefacts         */
+      const TILT      = -0.55;
+      const CAM_DIST  = 1.5;
 
       function fR(z) {
-        return 2.0 * Math.pow(Math.max(0, 1.0 - z / DEPTH), 0.50);
+        return 1.5 * Math.pow(Math.max(0, 1.0 - z / DEPTH), 0.52);
       }
 
       function proj(theta, z) {
@@ -949,9 +952,11 @@
         return { px: x / d * SCALE + W * 0.5, py: yT / d * SCALE + CY };
       }
 
+      /* Outer rings (small z) are brightest — opacity falls monotonically
+         toward the singularity.  Quick fade-in at z≈0 prevents pop.       */
       function ringA(z) {
         const t = z / DEPTH;
-        return Math.min(1, t * 18) * Math.pow(1 - t, 1.8) * 0.62;
+        return Math.min(1, t * 60) * Math.pow(1 - t, 1.8) * 0.70;
       }
 
       let clk = 0, lt = 0;
@@ -967,24 +972,24 @@
           ((i / RINGS * DEPTH) + clk * SPEED) % DEPTH
         ).map((z, i) => ({ z, i })).sort((a, b) => a.z - b.z);
 
-        /* ── Rings — no closePath() to avoid stray cross-screen lines ── */
+        /* Rings — 180 segments each so they appear as smooth circles */
         for (const { z } of sorted) {
           const a = ringA(z);
           if (a < 0.007) continue;
           ctx.beginPath();
           let f = true;
-          for (let s = 0; s <= SPOKES; s++) {  // s=SPOKES repeats theta=0 → closes loop
-            const pt = proj((s / SPOKES) * Math.PI * 2, z);
+          for (let s = 0; s <= RING_SEGS; s++) {
+            const pt = proj((s / RING_SEGS) * Math.PI * 2, z);
             if (!pt) { f = true; continue; }
             if (f) { ctx.moveTo(pt.px, pt.py); f = false; }
             else    ctx.lineTo(pt.px, pt.py);
           }
           ctx.strokeStyle = `rgba(225,220,215,${a})`;
-          ctx.lineWidth = Math.max(0.2, (1 - z / DEPTH) * 1.4);
+          ctx.lineWidth = Math.max(0.2, (1 - z / DEPTH) * 1.5);
           ctx.stroke();
         }
 
-        /* ── Spokes ── */
+        /* Spokes — 24 radial lines */
         for (let s = 0; s < SPOKES; s++) {
           const theta = (s / SPOKES) * Math.PI * 2;
           ctx.beginPath();
@@ -995,8 +1000,8 @@
             if (f) { ctx.moveTo(pt.px, pt.py); f = false; }
             else    ctx.lineTo(pt.px, pt.py);
           }
-          ctx.strokeStyle = 'rgba(225,220,215,0.20)';
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = 'rgba(225,220,215,0.22)';
+          ctx.lineWidth = 0.55;
           ctx.stroke();
         }
 
@@ -1007,24 +1012,22 @@
         W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
 
-        const cosT = Math.cos(TILT);   //  0.7317
-        const sinT = Math.sin(TILT);   // -0.6816
-        const R0   = fR(0);            //  2.0
+        const cosT = Math.cos(TILT);   // 0.8525
+        const sinT = Math.sin(TILT);   // -0.5227
+        const R0   = fR(0);            // 1.5
 
-        /* nBot: normalised screen-y of near-camera arc of outer ring (theta=-π/2, z=0)
-           nSng: normalised screen-y of singularity (on-axis, z=DEPTH)
-           With TILT=-0.75, CAM_DIST=2.0, R0=2.0:
-             dBot = R0*|sinT| + CAM_DIST ≈ 1.363 + 2.0 = 3.363   (safe, > 0)
-             dSng = DEPTH*cosT + CAM_DIST ≈ 4.390 + 2.0 = 6.390  (safe)           */
-        const dBot = (-R0 * sinT) + CAM_DIST;
-        const nBot = (-R0 * cosT) / dBot;        // ≈ -0.435
+        /* Anchor points (normalised screen-y before SCALE/CY):
+           nBot: near-camera arc of outer ring  (theta=-π/2, z=0)
+           nSng: singularity                    (on-axis,    z=DEPTH)        */
+        const dBot = (-R0 * sinT) + CAM_DIST;   // 1.5*0.523+1.5 = 2.284
+        const nBot = (-R0 * cosT) / dBot;        // ≈ -0.559
 
-        const dSng = (DEPTH * cosT) + CAM_DIST;
-        const nSng = (-DEPTH * sinT) / dSng;     // ≈ +0.639
+        const dSng = (DEPTH * cosT) + CAM_DIST; // 7*0.852+1.5 = 7.466
+        const nSng = (-DEPTH * sinT) / dSng;    // 7*0.523/7.466 ≈ 0.490
 
-        /* Pin: outer near-arc 15% above screen top, singularity at 62% height */
-        SCALE = H * 0.77 / (nSng - nBot);
-        CY    = -H * 0.15 - nBot * SCALE;
+        /* Pin outer near-arc 25% above screen, singularity at 55% height */
+        SCALE = H * 0.80 / (nSng - nBot);
+        CY    = -H * 0.25 - nBot * SCALE;
       }
 
       window.addEventListener('resize', init);
