@@ -191,6 +191,121 @@
       width: 0%;
       transition: width 0.15s linear;
     }
+
+    /* ════════════════════════════════════
+       LEAPS SUB-WINDOW
+    ════════════════════════════════════ */
+    #leaps-window {
+      position: absolute;
+      top: 12vh;
+      left: 50%;
+      width: min(76%, 700px);
+      height: 62vh;
+      display: flex;
+      flex-direction: column;
+      background: #0c0c0c;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 32px 100px rgba(0,0,0,0.92);
+      z-index: 10;
+      opacity: 0;
+      transform: translateX(-50%) scale(0.96) translateY(10px);
+      transition: opacity 0.38s ease, transform 0.38s ease;
+      pointer-events: none;
+    }
+
+    #leaps-window.visible {
+      opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    .leaps-win-chrome {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      background: #1c1c1c;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      user-select: none;
+    }
+
+    .leaps-win-url {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 0.22rem 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: #888;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-radius: 3px;
+    }
+
+    .leaps-win-open {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.2rem 0.6rem;
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .leaps-win-open:hover { color: #e8e8e8; border-color: rgba(255,255,255,0.2); }
+
+    .leaps-win-body {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    #leaps-iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 900px;
+      border: none;
+      transform-origin: top left;
+      pointer-events: none;
+    }
+
+    .leaps-win-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .leaps-win-overlay-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #e8e8e8;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 0.55rem 1.3rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .leaps-win-overlay:hover .leaps-win-overlay-label { opacity: 1; }
   </style>
 </head>
 <body>
@@ -203,6 +318,32 @@
 
   <!-- Fixed terminal — always covers the viewport -->
   <div id="terminal-wrapper">
+
+    <!-- Leaps sub-window (floats above the terminal body) -->
+    <div id="leaps-window">
+      <div class="leaps-win-chrome">
+        <div class="term-dots">
+          <div class="term-dot dot-red"></div>
+          <div class="term-dot dot-yellow"></div>
+          <div class="term-dot dot-green"></div>
+        </div>
+        <div class="leaps-win-url">https://leaps.to</div>
+        <a href="https://leaps.to" target="_blank" rel="noopener" class="leaps-win-open">Open ↗</a>
+      </div>
+      <div class="leaps-win-body">
+        <iframe
+          src="https://leaps.to"
+          id="leaps-iframe"
+          title="Leaps — live product"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin"
+        ></iframe>
+        <a href="https://leaps.to" target="_blank" rel="noopener" class="leaps-win-overlay">
+          <span class="leaps-win-overlay-label">Open Leaps ↗</span>
+        </a>
+      </div>
+    </div>
+
     <div class="term-window">
 
       <div class="term-chrome">
@@ -432,14 +573,36 @@
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       }
 
+      /* ── Leaps sub-window helpers ── */
+      const leapsWin    = document.getElementById('leaps-window');
+      const leapsIframe = document.getElementById('leaps-iframe');
+
+      function scaleLeapsIframe() {
+        const bodyW = leapsWin.querySelector('.leaps-win-body').offsetWidth;
+        if (bodyW > 0) {
+          leapsIframe.style.transform = 'scale(' + (bodyW / 1280).toFixed(4) + ')';
+        }
+      }
+
+      function showLeapsWindow() {
+        scaleLeapsIframe();
+        leapsWin.classList.add('visible');
+      }
+
+      function hideLeapsWindow() {
+        leapsWin.classList.remove('visible');
+      }
+
+      window.addEventListener('resize', scaleLeapsIframe);
+
       /* ── Session steps ── */
       const STEPS = [
         { cmd: 'whoami',            startAt: 0.00 },
         { cmd: 'ls --sections',     startAt: 0.11 },
         { cmd: 'cat about.txt',     startAt: 0.22 },
         { cmd: 'cat leaps.md',      startAt: 0.35 },
-        { cmd: 'open leaps.to',     startAt: 0.47 },
-        { cmd: 'cat experience.md', startAt: 0.57 },
+        { cmd: 'open leaps.to',     startAt: 0.47, after:  showLeapsWindow },
+        { cmd: 'cat experience.md', startAt: 0.57, before: hideLeapsWindow },
         { cmd: 'cat projects.md',   startAt: 0.70 },
         { cmd: 'cat stack.txt',     startAt: 0.80 },
         { cmd: 'contact --all',     startAt: 0.90 },
@@ -611,13 +774,19 @@
           state.cursorEl = null;
         }
 
-        const step    = STEPS[i];
+        const step = STEPS[i];
+
+        if (step.before) step.before();
+
         const prompt  = addPrompt('', false);
         const cmdSpan = prompt.querySelector('.prompt-cmd');
 
         typeInto(cmdSpan, step.cmd, function () {
           const output = STEP_OUTPUT[i] || [];
           renderLines(output, function () {
+            if (step.after) {
+              setTimeout(step.after, 220);
+            }
             addPrompt('', true);
           });
         });
