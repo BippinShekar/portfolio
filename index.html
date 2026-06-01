@@ -530,6 +530,66 @@
       .stack-tags { border-top: none; padding-top: 0; border-bottom: 1px solid var(--border); }
     }
 
+    #projects { padding: 7rem 2.5rem 0; }
+
+    .project-block {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 2.5rem;
+      transition: border-color 0.3s;
+    }
+
+    .project-block:last-child { border-bottom: 1px solid var(--border); }
+    .project-block:hover { border-top-color: var(--border-h); }
+
+    .project-tag {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      padding: 0.18rem 0.55rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .project-name {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .project-links {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .project-link {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.9rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .project-link:hover {
+      color: var(--white);
+      border-color: var(--border-h);
+    }
+
+    @media (max-width: 700px) {
+      .project-block { grid-template-columns: 1fr; gap: 1rem; }
+    }
+
     #connect {
       padding: 6rem 2.5rem 5rem;
       text-align: center;
@@ -738,6 +798,32 @@
             <li>Built hybrid RAG infrastructure reducing search time by 20%.</li>
             <li>Drove $500K+ enterprise lead pipeline impact.</li>
           </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="projects">
+    <div class="wrap">
+
+      <p class="sec-eyebrow">Projects</p>
+      <h2 class="sec-title">Open Source</h2>
+
+      <div class="project-block fade-in">
+        <div>
+          <div class="project-tag">In Development</div>
+          <div class="project-name">Askr</div>
+        </div>
+        <div>
+          <div class="exp-role">Developer Tooling for AI-Assisted Workflows</div>
+          <ul class="exp-bullets">
+            <li>Building an open-source tool for engineers to optimize their AI-assisted development cycles — built out of personal frustration with existing day-to-day tooling.</li>
+            <li>Designed around the workflows engineers actually run: context management, prompt iteration, and evaluation loops that current tools treat as afterthoughts.</li>
+          </ul>
+          <div class="project-links">
+            <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" class="project-link">GitHub ↗</a>
+          </div>
         </div>
       </div>
 
