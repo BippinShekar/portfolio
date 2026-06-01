@@ -383,8 +383,7 @@
     })();
 
     /* ════════════════════════════════════════════════════════
-       TERMINAL SESSION — boot + prompt
-       (scroll engine + content added in next stages)
+       TERMINAL SESSION
     ════════════════════════════════════════════════════════ */
     (function () {
       const SCROLL_HEIGHT_VH = 900;
@@ -413,19 +412,114 @@
         return d;
       }
 
-      function addCursor() {
+      function addCursorEl() {
         const span = document.createElement('span');
         span.className = 'cursor';
         linesEl.appendChild(span);
         return span;
       }
 
-      /* ── Boot sequence ── */
+      /* ── Session steps
+         Each step activates when scroll progress reaches `startAt`.
+         cmd    : text typed at the prompt
+         startAt: 0–1 progress threshold
+         Output lines added in Stage 3.
+      ── */
+      const STEPS = [
+        { cmd: 'whoami',            startAt: 0.00 },
+        { cmd: 'ls --sections',     startAt: 0.11 },
+        { cmd: 'cat about.txt',     startAt: 0.22 },
+        { cmd: 'cat leaps.md',      startAt: 0.35 },
+        { cmd: 'open leaps.to',     startAt: 0.47 },
+        { cmd: 'cat experience.md', startAt: 0.57 },
+        { cmd: 'cat projects.md',   startAt: 0.70 },
+        { cmd: 'cat stack.txt',     startAt: 0.80 },
+        { cmd: 'contact --all',     startAt: 0.90 },
+      ];
+
+      /* ── State ── */
+      const state = {
+        activated: -1,    // index of last activated step
+        typing:    false, // true while a command is being typed
+        cursorEl:  null,  // the live blinking cursor element
+      };
+
+      /* ── Typewriter: types `text` into `el` char by char, then calls done() ── */
+      function typeInto(el, text, done) {
+        let i = 0;
+        state.typing = true;
+        function tick() {
+          el.textContent = text.slice(0, ++i);
+          if (i < text.length) {
+            setTimeout(tick, 42 + Math.random() * 28);
+          } else {
+            state.typing = false;
+            if (done) done();
+          }
+        }
+        setTimeout(tick, 120);
+      }
+
+      /* ── Activate step i: type command, then render output ── */
+      function activateStep(i) {
+        if (i !== state.activated + 1) return; // enforce order
+        state.activated = i;
+
+        // Remove floating cursor from previous idle state
+        if (state.cursorEl) {
+          state.cursorEl.remove();
+          state.cursorEl = null;
+        }
+
+        const step     = STEPS[i];
+        const promptEl = addPrompt('');
+        const cmdSpan  = promptEl.querySelector('.prompt-cmd');
+
+        typeInto(cmdSpan, step.cmd, function () {
+          // Output rendered in Stage 3 — stub fires renderOutput which is a no-op here
+          renderOutput(i, function () {
+            // After output: show idle prompt + cursor
+            addPrompt('');
+            state.cursorEl = addCursorEl();
+          });
+        });
+      }
+
+      /* ── Output renderer — filled in Stage 3, stub for now ── */
+      function renderOutput(stepIndex, done) {
+        done();
+      }
+
+      /* ── Scroll engine ── */
+      function onScroll() {
+        const maxY     = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxY > 0 ? window.scrollY / maxY : 0;
+
+        // Progress bar
+        progressEl.style.width = (progress * 100).toFixed(2) + '%';
+
+        // Activate the next pending step if scroll reached its threshold
+        const next = state.activated + 1;
+        if (
+          next < STEPS.length &&
+          progress >= STEPS[next].startAt &&
+          !state.typing
+        ) {
+          activateStep(next);
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      /* ── Boot: show login line, first idle prompt, cursor ── */
       function boot() {
         addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
         addLine('line-output empty', '');
         addPrompt('');
-        addCursor();
+        state.cursorEl = addCursorEl();
+
+        // Kick scroll engine once so step 0 fires if page loads mid-scroll
+        onScroll();
       }
 
       boot();
