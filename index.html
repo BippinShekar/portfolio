@@ -198,10 +198,10 @@
     ════════════════════════════════════ */
     #leaps-window {
       position: absolute;
-      top: 12vh;
-      left: 50%;
-      width: min(76%, 700px);
-      height: 62vh;
+      top: calc(2vh + 3.2rem);
+      right: calc(2.5vw + 0.4rem);
+      width: min(48%, 580px);
+      height: calc(96vh - 3.2rem - 4vh);
       display: flex;
       flex-direction: column;
       background: #0c0c0c;
@@ -213,14 +213,14 @@
         0 32px 100px rgba(0,0,0,0.92);
       z-index: 10;
       opacity: 0;
-      transform: translateX(-50%) scale(0.96) translateY(10px);
+      transform: scale(0.96) translateX(14px);
       transition: opacity 0.38s ease, transform 0.38s ease;
       pointer-events: none;
     }
 
     #leaps-window.visible {
       opacity: 1;
-      transform: translateX(-50%) scale(1) translateY(0);
+      transform: scale(1) translateX(0);
       pointer-events: auto;
     }
 
