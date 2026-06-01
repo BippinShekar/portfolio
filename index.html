@@ -133,6 +133,7 @@
       display: flex;
       flex-direction: column;
       scrollbar-width: none;
+      transition: opacity 0.45s ease;
     }
     #term-output::-webkit-scrollbar { display: none; }
 
@@ -733,6 +734,7 @@
         activated: -1,
         typing:    false,
         cursorEl:  null,
+        looping:   false,
       };
 
       /* ── Typewriter: types text char by char into el, then calls done() ── */
@@ -792,12 +794,69 @@
         });
       }
 
+      /* ── Infinite loop: fade out, reset, scroll to top, fade in ── */
+      function triggerLoop() {
+        state.looping = true;
+
+        if (state.cursorEl) { state.cursorEl.remove(); state.cursorEl = null; }
+
+        // Type a "clear" command then fade out
+        const clearPrompt  = addPrompt('', false);
+        const clearCmdSpan = clearPrompt.querySelector('.prompt-cmd');
+
+        typeInto(clearCmdSpan, 'clear', function () {
+          addLine('line-output dim mt', '# session complete — restarting …');
+
+          setTimeout(function () {
+            outputEl.style.opacity = '0';
+
+            setTimeout(function () {
+              // Wipe terminal
+              linesEl.innerHTML = '';
+              state.activated   = -1;
+              state.typing      = false;
+              state.cursorEl    = null;
+              state.looping     = false;
+              hideLeapsWindow();
+
+              // Jump to top
+              window.scrollTo(0, 0);
+
+              // Re-boot
+              addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
+              addLine('line-output empty', '');
+              addPrompt('', true);
+
+              // Fade back in after a double rAF so the opacity:0 is painted first
+              requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                  outputEl.style.opacity = '1';
+                  onScroll();
+                });
+              });
+            }, 500);
+          }, 900);
+        });
+      }
+
       /* ── Scroll engine ── */
       function onScroll() {
+        if (state.looping) return;
+
         const maxY     = document.documentElement.scrollHeight - window.innerHeight;
         const progress = maxY > 0 ? window.scrollY / maxY : 0;
 
         progressEl.style.width = (progress * 100).toFixed(2) + '%';
+
+        // All steps done + near end → loop
+        if (
+          state.activated === STEPS.length - 1 &&
+          !state.typing   &&
+          progress >= 0.96
+        ) {
+          triggerLoop();
+          return;
+        }
 
         const next = state.activated + 1;
         if (next < STEPS.length && progress >= STEPS[next].startAt && !state.typing) {
