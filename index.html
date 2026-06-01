@@ -138,6 +138,116 @@
 
     #building { padding: 7rem 2.5rem; }
 
+    .browser-wrap {
+      margin-top: 3.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .browser-chrome {
+      background: #0a0a0a;
+      border-bottom: 1px solid var(--border);
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .browser-dots {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .browser-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--dim);
+      opacity: 0.5;
+    }
+
+    .browser-url {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      font-size: 0.72rem;
+      color: var(--mid);
+      letter-spacing: 0.03em;
+      font-family: var(--sans);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .browser-open-btn {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      transition: color 0.2s, border-color 0.2s;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .browser-open-btn:hover {
+      color: var(--white);
+      border-color: var(--border-h);
+    }
+
+    .browser-frame-outer {
+      position: relative;
+      width: 100%;
+      height: 560px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .browser-frame-outer iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 900px;
+      border: none;
+      transform-origin: top left;
+      transform: scale(var(--iframe-scale, 0.7));
+      pointer-events: none;
+    }
+
+    .browser-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .browser-overlay-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--white);
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--border-h);
+      padding: 0.6rem 1.4rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .browser-overlay:hover .browser-overlay-label {
+      opacity: 1;
+    }
+
     section { position: relative; z-index: 1; }
 
     .wrap {
@@ -569,6 +679,28 @@
         <li>Sole engineer — architecting, building, and shipping the entire system from infrastructure to agent orchestration.</li>
       </ul>
 
+      <div class="browser-wrap fade-in" id="leaps-browser">
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="browser-url">leaps.to</div>
+          <a href="https://leaps.to" target="_blank" rel="noopener" class="browser-open-btn">Open Live ↗</a>
+        </div>
+        <div class="browser-frame-outer" id="browser-frame-outer">
+          <iframe
+            src="https://leaps.to"
+            id="leaps-iframe"
+            title="Leaps — live product"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+          ></iframe>
+          <a href="https://leaps.to" target="_blank" rel="noopener" class="browser-overlay">
+            <span class="browser-overlay-label">Open Leaps ↗</span>
+          </a>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -805,6 +937,20 @@
         setTimeout(tick, del ? 40 : 80);
       }
       tick();
+    })();
+
+    /* ── Iframe scale ── */
+    (function () {
+      function scaleIframe() {
+        const outer = document.getElementById('browser-frame-outer');
+        const iframe = document.getElementById('leaps-iframe');
+        if (!outer || !iframe) return;
+        const scale = outer.offsetWidth / 1280;
+        iframe.style.transform = 'scale(' + scale + ')';
+        outer.style.height = Math.round(900 * scale) + 'px';
+      }
+      scaleIframe();
+      window.addEventListener('resize', scaleIframe);
     })();
 
     /* ── Scroll reveal ── */
