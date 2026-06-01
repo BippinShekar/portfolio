@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bippin Shekar Goud — AI Engineer</title>
+  <title>Bippin Shekar Goud - AI Engineer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
       --bg:        #000;
       --term-bg:   #0d0d0d;
       --chrome-bg: #1a1a1a;
-      --green:     #4ade80;
+      --gold:      #d4a017;
       --white:     #e8e8e8;
       --mid:       #888;
       --dim:       #444;
@@ -152,7 +152,7 @@
       white-space: pre;
     }
 
-    .prompt-host { color: var(--green); font-weight: 500; }
+    .prompt-host { color: var(--gold); font-weight: 500; }
     .prompt-path { color: var(--mid); }
     .prompt-sym  { color: var(--dim); }
     .prompt-cmd  { color: var(--white); }
@@ -164,7 +164,7 @@
       padding-left: 0;
     }
     .line-output.bright { color: var(--white); }
-    .line-output.green  { color: var(--green); }
+    .line-output.green  { color: var(--gold); }
     .line-output.dim    { color: var(--dim); }
     .line-output.mt     { margin-top: 0.6rem; }
     .line-output.mb     { margin-bottom: 0.6rem; }
@@ -175,7 +175,7 @@
       display: inline-block;
       width: 0.52em;
       height: 1em;
-      background: var(--green);
+      background: var(--gold);
       vertical-align: text-bottom;
       margin-left: 1px;
       animation: blink 0.9s step-end infinite;
@@ -188,7 +188,7 @@
       bottom: 0;
       left: 0;
       height: 1px;
-      background: rgba(74, 222, 128, 0.35);
+      background: rgba(212, 160, 23, 0.35);
       width: 0%;
       transition: width 0.15s linear;
     }
@@ -335,7 +335,7 @@
         <iframe
           src="https://leaps.to"
           id="leaps-iframe"
-          title="Leaps — live product"
+          title="Leaps - live product"
           loading="lazy"
           sandbox="allow-scripts allow-same-origin"
         ></iframe>
@@ -353,7 +353,7 @@
           <div class="term-dot dot-yellow"></div>
           <div class="term-dot dot-green"></div>
         </div>
-        <div class="term-title">bippin@portfolio — zsh</div>
+        <div class="term-title">bippin@portfolio - zsh</div>
         <div class="term-progress" id="term-progress"></div>
       </div>
 
@@ -382,7 +382,7 @@
       const FONT = `${FS}px 'JetBrains Mono','SF Mono','Fira Code',monospace`;
 
       const ALPHA = { orch:0.07, call:0.09, res:0.08, ok:0.13, skip:0.03 };
-      const COL   = { ok:[74,222,128], _:[220,215,210] };
+      const COL   = { ok:[212,160,23], _:[220,215,210] };
 
       const STREAMS = [
         {
@@ -577,6 +577,7 @@
       /* ── Leaps sub-window helpers ── */
       const leapsWin    = document.getElementById('leaps-window');
       const leapsIframe = document.getElementById('leaps-iframe');
+      let   leapsShowTimer = null;
 
       function scaleLeapsIframe() {
         const bodyW = leapsWin.querySelector('.leaps-win-body').offsetWidth;
@@ -586,11 +587,16 @@
       }
 
       function showLeapsWindow() {
+        leapsShowTimer = null;
         scaleLeapsIframe();
         leapsWin.classList.add('visible');
       }
 
       function hideLeapsWindow() {
+        if (leapsShowTimer !== null) {
+          clearTimeout(leapsShowTimer);
+          leapsShowTimer = null;
+        }
         leapsWin.classList.remove('visible');
       }
 
@@ -617,7 +623,7 @@
           ['line-output bright mt', 'Desham Bippin Shekar Goud'],
           ['line-output dim',       'Founder &amp; AI Systems Architect'],
           ['line-output empty',     ''],
-          ['line-output', 'Currently founding Leaps — autonomous multi-agent job execution.'],
+          ['line-output', 'Currently founding Leaps: autonomous multi-agent job execution.'],
           ['line-output', 'Before that: founding AI engineer at two early-stage companies,'],
           ['line-output', 'building enterprise T2SQL engines, VoC pipelines at 100K+ inputs/day,'],
           ['line-output', 'and agentic systems from scratch.'],
@@ -648,13 +654,13 @@
 
         /* 3: cat leaps.md */
         [
-          ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">↗ leaps.to</a>'],
+          ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">↗ leaps.to</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; Live · Alpha'],
-          ['line-output dim', 'Period &nbsp;&nbsp; Dec 2025 – Present'],
+          ['line-output dim', 'Period &nbsp;&nbsp; Dec 2025 - Present'],
           ['line-output dim', 'Role &nbsp;&nbsp;&nbsp;&nbsp; Founder &amp; Lead Engineer'],
           ['line-output empty', ''],
           ['line-output', 'AI-native career execution platform. Replaces volume-based job'],
-          ['line-output', 'searching with fit-driven execution — scores candidate fit,'],
+          ['line-output', 'searching with fit-driven execution. Scores candidate fit,'],
           ['line-output', 'identifies skill gaps, and autonomously applies to high-match roles.'],
           ['line-output empty', ''],
           ['line-output bright', 'Alpha results (week 1)'],
@@ -669,30 +675,30 @@
 
         /* 4: open leaps.to — sub-window spawned in Stage 4, stub output here */
         [
-          ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">https://leaps.to</a> …'],
+          ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://leaps.to</a> …'],
           ['line-output empty', ''],
         ],
 
         /* 5: cat experience.md */
         [
-          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer — Agentic Copilot'],
-          ['line-output', '  – Architected agentic AI copilot: raw feedback → structured intelligence'],
-          ['line-output', '  – VoC ingestion pipelines scaling to 100K+ inputs / day'],
-          ['line-output', '  – 40% end-to-end latency reduction via retrieval &amp; memory optimization'],
-          ['line-output', '  – Full lifecycle: architecture → infra → evaluation → iteration'],
+          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer: Agentic Copilot'],
+          ['line-output', '  -Architected agentic AI copilot: raw feedback → structured intelligence'],
+          ['line-output', '  -VoC ingestion pipelines scaling to 100K+ inputs / day'],
+          ['line-output', '  -40% end-to-end latency reduction via retrieval &amp; memory optimization'],
+          ['line-output', '  -Full lifecycle: architecture → infra → evaluation → iteration'],
           ['line-output empty', ''],
-          ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer — Neutrino Platform'],
-          ['line-output', '  – Designed Neutrino: full-stack generative AI enterprise insights system'],
-          ['line-output', '  – Multi-agent routing: T2SQL, RAG, workflow agents, live research'],
-          ['line-output', '  – +17% T2SQL accuracy via metadata-aware prompting + LoRA fine-tuning'],
-          ['line-output', '  – Hybrid RAG infrastructure: 20% faster search'],
-          ['line-output', '  – $500K+ enterprise lead pipeline impact'],
+          ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer: Neutrino Platform'],
+          ['line-output', '  -Designed Neutrino: full-stack generative AI enterprise insights system'],
+          ['line-output', '  -Multi-agent routing: T2SQL, RAG, workflow agents, live research'],
+          ['line-output', '  -+17% T2SQL accuracy via metadata-aware prompting + LoRA fine-tuning'],
+          ['line-output', '  -Hybrid RAG infrastructure: 20% faster search'],
+          ['line-output', '  -$500K+ enterprise lead pipeline impact'],
           ['line-output empty', ''],
         ],
 
         /* 6: cat projects.md */
         [
-          ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
+          ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; In Development &nbsp;·&nbsp; Open Source'],
           ['line-output empty', ''],
           ['line-output', 'Open-source developer tooling for AI-assisted workflows.'],
@@ -721,10 +727,10 @@
         [
           ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
           ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
-          ['line-output bright',    'LinkedIn &nbsp;&nbsp; <a href="https://www.linkedin.com/in/bippin-shekar001/" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">linkedin.com/in/bippin-shekar001 ↗</a>'],
-          ['line-output bright',    'GitHub &nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">github.com/BippinShekar ↗</a>'],
+          ['line-output bright',    'LinkedIn &nbsp;&nbsp; <a href="https://www.linkedin.com/in/bippin-shekar001/" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">linkedin.com/in/bippin-shekar001 ↗</a>'],
+          ['line-output bright',    'GitHub &nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar ↗</a>'],
           ['line-output empty', ''],
-          ['line-output dim', '– Available for the right opportunity.'],
+          ['line-output dim', '- Available for the right opportunity.'],
           ['line-output empty', ''],
         ],
       ];
@@ -786,8 +792,10 @@
         typeInto(cmdSpan, step.cmd, function () {
           const output = STEP_OUTPUT[i] || [];
           renderLines(output, function () {
-            if (step.after) {
-              setTimeout(step.after, 220);
+            if (step.after === showLeapsWindow) {
+              leapsShowTimer = setTimeout(showLeapsWindow, 220);
+            } else if (step.after) {
+              step.after();
             }
             addPrompt('', true);
           });
@@ -805,7 +813,7 @@
         const clearCmdSpan = clearPrompt.querySelector('.prompt-cmd');
 
         typeInto(clearCmdSpan, 'clear', function () {
-          addLine('line-output dim mt', '# session complete — restarting …');
+          addLine('line-output dim mt', '# session complete. restarting ...');
 
           setTimeout(function () {
             outputEl.style.opacity = '0';
