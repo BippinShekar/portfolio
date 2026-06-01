@@ -554,6 +554,11 @@
        TERMINAL SESSION
     ════════════════════════════════════════════════════════ */
     (function () {
+      // Prevent browser from restoring a previous scroll position on reload,
+      // which would make checkProgress fire with non-zero progress and cascade all steps.
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      window.scrollTo(0, 0);
+
       const SCROLL_HEIGHT_VH = 900;
       document.getElementById('scroll-spacer').style.height = SCROLL_HEIGHT_VH + 'vh';
 
@@ -845,7 +850,6 @@
               step.after();
             }
             addPrompt('', true);
-            setTimeout(checkProgress, 160);
           });
         });
       }
