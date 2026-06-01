@@ -126,19 +126,21 @@
       flex-direction: column;
     }
 
-    /* Output scroll area — contents scroll up as session grows */
+    /* Output scroll area — scrolls to latest as session grows */
     #term-output {
       flex: 1;
-      overflow: hidden;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      scrollbar-width: none;
     }
+    #term-output::-webkit-scrollbar { display: none; }
 
     #term-lines {
       display: flex;
       flex-direction: column;
       gap: 0;
+      padding-bottom: 0.25rem;
     }
 
     /* ── Line types ── */
@@ -390,41 +392,47 @@
       document.getElementById('scroll-spacer').style.height = SCROLL_HEIGHT_VH + 'vh';
 
       const linesEl    = document.getElementById('term-lines');
+      const outputEl   = document.getElementById('term-output');
       const progressEl = document.getElementById('term-progress');
 
       /* ── DOM helpers ── */
+      function scrollBottom() {
+        outputEl.scrollTop = outputEl.scrollHeight;
+      }
+
       function addLine(cls, html) {
         const d = document.createElement('div');
         d.className = cls;
         d.innerHTML = html;
         linesEl.appendChild(d);
+        scrollBottom();
         return d;
       }
 
-      function addPrompt(cmd) {
+      /* Adds a prompt line; if withCursor=true, appends blinking cursor inside it */
+      function addPrompt(cmd, withCursor) {
         const d = document.createElement('div');
         d.className = 'line-prompt';
         d.innerHTML =
           '<span class="prompt-host">bippin@portfolio</span>' +
           '<span class="prompt-sym">:~$&nbsp;</span>' +
-          '<span class="prompt-cmd">' + (cmd || '') + '</span>';
+          '<span class="prompt-cmd">' + (cmd ? esc(cmd) : '') + '</span>';
+        if (withCursor) {
+          const c = document.createElement('span');
+          c.className = 'cursor';
+          d.appendChild(c);
+          state.cursorEl = c;
+        }
         linesEl.appendChild(d);
+        scrollBottom();
         return d;
       }
 
-      function addCursorEl() {
-        const span = document.createElement('span');
-        span.className = 'cursor';
-        linesEl.appendChild(span);
-        return span;
+      function esc(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       }
 
-      /* ── Session steps
-         Each step activates when scroll progress reaches `startAt`.
-         cmd    : text typed at the prompt
-         startAt: 0–1 progress threshold
-         Output lines added in Stage 3.
-      ── */
+      /* ── Session steps ── */
       const STEPS = [
         { cmd: 'whoami',            startAt: 0.00 },
         { cmd: 'ls --sections',     startAt: 0.11 },
@@ -437,57 +445,182 @@
         { cmd: 'contact --all',     startAt: 0.90 },
       ];
 
+      /* ── Output data: [className, innerHTML] per step ── */
+      const STEP_OUTPUT = [
+
+        /* 0: whoami */
+        [
+          ['line-output bright mt', 'Desham Bippin Shekar Goud'],
+          ['line-output dim',       'Founder &amp; AI Systems Architect'],
+          ['line-output empty',     ''],
+          ['line-output', 'Currently founding Leaps — autonomous multi-agent job execution.'],
+          ['line-output', 'Before that: founding AI engineer at two early-stage companies,'],
+          ['line-output', 'building enterprise T2SQL engines, VoC pipelines at 100K+ inputs/day,'],
+          ['line-output', 'and agentic systems from scratch.'],
+          ['line-output empty', ''],
+        ],
+
+        /* 1: ls --sections */
+        [
+          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md'],
+          ['line-output',    'projects.md &nbsp; stack.txt &nbsp;&nbsp;&nbsp; contact'],
+          ['line-output empty', ''],
+        ],
+
+        /* 2: cat about.txt */
+        [
+          ['line-output bright mt', 'Name &nbsp;&nbsp; Desham Bippin Shekar Goud'],
+          ['line-output',           'Role &nbsp;&nbsp; Founder &amp; AI Systems Architect'],
+          ['line-output empty', ''],
+          ['line-output dim',  '─────────────────────────────────'],
+          ['line-output bright', 'Stats'],
+          ['line-output', '  40% &nbsp;&nbsp;&nbsp;&nbsp; latency reduction'],
+          ['line-output', '  33× &nbsp;&nbsp;&nbsp;&nbsp; throughput increase'],
+          ['line-output', '  100K+ &nbsp;&nbsp; inputs / day processed'],
+          ['line-output', '  98% &nbsp;&nbsp;&nbsp;&nbsp; T2SQL generation accuracy'],
+          ['line-output', '  0→4.3% &nbsp; interview conversion rate (Leaps week-1)'],
+          ['line-output empty', ''],
+        ],
+
+        /* 3: cat leaps.md */
+        [
+          ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">↗ leaps.to</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Live · Alpha'],
+          ['line-output dim', 'Period &nbsp;&nbsp; Dec 2025 – Present'],
+          ['line-output dim', 'Role &nbsp;&nbsp;&nbsp;&nbsp; Founder &amp; Lead Engineer'],
+          ['line-output empty', ''],
+          ['line-output', 'AI-native career execution platform. Replaces volume-based job'],
+          ['line-output', 'searching with fit-driven execution — scores candidate fit,'],
+          ['line-output', 'identifies skill gaps, and autonomously applies to high-match roles.'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Alpha results (week 1)'],
+          ['line-output green',  '  47 &nbsp;&nbsp; applications filled'],
+          ['line-output green',  '   2 &nbsp;&nbsp; interviews landed &nbsp; (vs 0 from 100+ prior manual)'],
+          ['line-output green',  '   0 → 4.3%   conversion rate'],
+          ['line-output empty', ''],
+          ['line-output dim', 'Stack &nbsp;&nbsp; multi-agent orchestration · LinkedIn automation'],
+          ['line-output dim', '         Ashby automation · fit scoring · gap analysis'],
+          ['line-output empty', ''],
+        ],
+
+        /* 4: open leaps.to — sub-window spawned in Stage 4, stub output here */
+        [
+          ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">https://leaps.to</a> …'],
+          ['line-output empty', ''],
+        ],
+
+        /* 5: cat experience.md */
+        [
+          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer — Agentic Copilot'],
+          ['line-output', '  – Architected agentic AI copilot: raw feedback → structured intelligence'],
+          ['line-output', '  – VoC ingestion pipelines scaling to 100K+ inputs / day'],
+          ['line-output', '  – 40% end-to-end latency reduction via retrieval &amp; memory optimization'],
+          ['line-output', '  – Full lifecycle: architecture → infra → evaluation → iteration'],
+          ['line-output empty', ''],
+          ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer — Neutrino Platform'],
+          ['line-output', '  – Designed Neutrino: full-stack generative AI enterprise insights system'],
+          ['line-output', '  – Multi-agent routing: T2SQL, RAG, workflow agents, live research'],
+          ['line-output', '  – +17% T2SQL accuracy via metadata-aware prompting + LoRA fine-tuning'],
+          ['line-output', '  – Hybrid RAG infrastructure: 20% faster search'],
+          ['line-output', '  – $500K+ enterprise lead pipeline impact'],
+          ['line-output empty', ''],
+        ],
+
+        /* 6: cat projects.md */
+        [
+          ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; In Development &nbsp;·&nbsp; Open Source'],
+          ['line-output empty', ''],
+          ['line-output', 'Open-source developer tooling for AI-assisted workflows.'],
+          ['line-output', 'Built from personal frustration with day-to-day AI tooling.'],
+          ['line-output empty', ''],
+          ['line-output', 'Context management · prompt iteration · evaluation loops.'],
+          ['line-output empty', ''],
+        ],
+
+        /* 7: cat stack.txt */
+        [
+          ['line-output bright mt', 'Languages &nbsp;&nbsp;&nbsp; Python &nbsp; GoLang &nbsp; SQL &nbsp; TypeScript &nbsp; Bash'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Frameworks &nbsp;&nbsp; FastAPI &nbsp; Flask &nbsp; Next.js &nbsp; React'],
+          ['line-output', '             RESTful APIs &nbsp; GraphQL'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Dev Tools &nbsp;&nbsp;&nbsp; Kubernetes &nbsp; Docker &nbsp; Git'],
+          ['line-output empty', ''],
+          ['line-output bright', 'AI / ML &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpenAI &nbsp; Gemini &nbsp; LangChain &nbsp; LangGraph &nbsp; LangFlow'],
+          ['line-output', '             Transformers &nbsp; Ollama &nbsp; PyTorch &nbsp; TensorFlow'],
+          ['line-output', '             Scikit-learn &nbsp; NLTK'],
+          ['line-output empty', ''],
+        ],
+
+        /* 8: contact --all */
+        [
+          ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
+          ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
+          ['line-output bright',    'LinkedIn &nbsp;&nbsp; <a href="https://www.linkedin.com/in/bippin-shekar001/" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">linkedin.com/in/bippin-shekar001 ↗</a>'],
+          ['line-output bright',    'GitHub &nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:none;">github.com/BippinShekar ↗</a>'],
+          ['line-output empty', ''],
+          ['line-output dim', '– Available for the right opportunity.'],
+          ['line-output empty', ''],
+        ],
+      ];
+
       /* ── State ── */
       const state = {
-        activated: -1,    // index of last activated step
-        typing:    false, // true while a command is being typed
-        cursorEl:  null,  // the live blinking cursor element
+        activated: -1,
+        typing:    false,
+        cursorEl:  null,
       };
 
-      /* ── Typewriter: types `text` into `el` char by char, then calls done() ── */
+      /* ── Typewriter: types text char by char into el, then calls done() ── */
       function typeInto(el, text, done) {
         let i = 0;
         state.typing = true;
         function tick() {
           el.textContent = text.slice(0, ++i);
+          scrollBottom();
           if (i < text.length) {
-            setTimeout(tick, 42 + Math.random() * 28);
+            setTimeout(tick, 38 + Math.random() * 30);
           } else {
             state.typing = false;
             if (done) done();
           }
         }
-        setTimeout(tick, 120);
+        setTimeout(tick, 100);
       }
 
-      /* ── Activate step i: type command, then render output ── */
+      /* ── Render output lines one by one with small delay ── */
+      function renderLines(lines, done) {
+        let i = 0;
+        function next() {
+          if (i >= lines.length) { if (done) done(); return; }
+          const [cls, html] = lines[i++];
+          addLine(cls, html);
+          setTimeout(next, 32);
+        }
+        next();
+      }
+
+      /* ── Activate step i ── */
       function activateStep(i) {
-        if (i !== state.activated + 1) return; // enforce order
+        if (i !== state.activated + 1) return;
         state.activated = i;
 
-        // Remove floating cursor from previous idle state
         if (state.cursorEl) {
           state.cursorEl.remove();
           state.cursorEl = null;
         }
 
-        const step     = STEPS[i];
-        const promptEl = addPrompt('');
-        const cmdSpan  = promptEl.querySelector('.prompt-cmd');
+        const step    = STEPS[i];
+        const prompt  = addPrompt('', false);
+        const cmdSpan = prompt.querySelector('.prompt-cmd');
 
         typeInto(cmdSpan, step.cmd, function () {
-          // Output rendered in Stage 3 — stub fires renderOutput which is a no-op here
-          renderOutput(i, function () {
-            // After output: show idle prompt + cursor
-            addPrompt('');
-            state.cursorEl = addCursorEl();
+          const output = STEP_OUTPUT[i] || [];
+          renderLines(output, function () {
+            addPrompt('', true);
           });
         });
-      }
-
-      /* ── Output renderer — filled in Stage 3, stub for now ── */
-      function renderOutput(stepIndex, done) {
-        done();
       }
 
       /* ── Scroll engine ── */
@@ -495,30 +628,21 @@
         const maxY     = document.documentElement.scrollHeight - window.innerHeight;
         const progress = maxY > 0 ? window.scrollY / maxY : 0;
 
-        // Progress bar
         progressEl.style.width = (progress * 100).toFixed(2) + '%';
 
-        // Activate the next pending step if scroll reached its threshold
         const next = state.activated + 1;
-        if (
-          next < STEPS.length &&
-          progress >= STEPS[next].startAt &&
-          !state.typing
-        ) {
+        if (next < STEPS.length && progress >= STEPS[next].startAt && !state.typing) {
           activateStep(next);
         }
       }
 
       window.addEventListener('scroll', onScroll, { passive: true });
 
-      /* ── Boot: show login line, first idle prompt, cursor ── */
+      /* ── Boot ── */
       function boot() {
         addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
         addLine('line-output empty', '');
-        addPrompt('');
-        state.cursorEl = addCursorEl();
-
-        // Kick scroll engine once so step 0 fires if page loads mid-scroll
+        addPrompt('', true);
         onScroll();
       }
 
