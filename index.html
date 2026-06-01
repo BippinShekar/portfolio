@@ -1039,7 +1039,7 @@
         /* Two-constraint solve:
              nSng  * SCALE + CY = H * 0.60   throat at 60% height
              nNear * SCALE + CY = H * (-0.30) near-arc 30% above screen     */
-        SCALE = H * 0.90 / (nSng - nNear);
+        SCALE = H * 1.15 / (nSng - nNear);
         CY    = H * 0.60 - nSng * SCALE;
       }
 
