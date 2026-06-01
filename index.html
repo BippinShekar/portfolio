@@ -927,48 +927,27 @@
       const ctx    = canvas.getContext('2d');
       let W, H, SCALE, CY;
 
-      /*
-       * Flamm's paraboloid — embedding diagram of Schwarzschild black hole geometry.
-       * The surface is a bowl: flat far from the hole, steepening sharply at the throat.
-       * Camera sits above and slightly to the side, looking down into the funnel.
-       *
-       * Coordinate system:
-       *   r   = radial distance on the bowl surface (large = outer flat region)
-       *   θ   = azimuthal angle around the funnel
-       *   z3d = bowl height = r_s * ln(r/r_s) (monotonic, 0 at throat)
-       *
-       * We parameterise as rings of equal r-spacing (matched to reference image):
-       *   ring i at r_i = r_throat + (r_outer - r_throat) * (i/N)^1 (linear in r)
-       *
-       * Viewing: camera elevated above the flat outer region, depression ~28°.
-       * SCALE set so the outermost ring extends ≈80% beyond each screen edge —
-       * the viewer is effectively inside the bowl rim.
-       */
-      const RING_SEGS = 200;  // pts per ring — smooth, no polygon edges
+      const RING_SEGS = 200;
       const RINGS     = 34;
       const SPOKES    = 22;
-      const SPEED     = 0.045; // slow: rings take ~22s to traverse — smooth, not choppy
+      const SPEED     = 0.045;
 
-      /* Paraboloid parameters (world units) */
-      const R_THROAT  = 0.10;   // event horizon radius (inner limit)
-      const R_OUTER   = 2.20;   // outer flat-region radius (gets scaled off-screen)
-      const RS        = 0.18;   // Schwarzschild scale (controls bowl steepness)
+      /* Quadratic bowl — no undefined zone, no pulsing.
+         z(r) = Z_DEPTH * ((R_OUTER-r)/R_OUTER)²  →  0 at rim, max at centre */
+      const R_THROAT  = 0.22;
+      const R_OUTER   = 1.00;
+      const Z_DEPTH   = 0.55;
+      const TILT      = -0.52;
+      const CAM_DIST  = 1.8;
 
-      /* Viewing */
-      const TILT      = -0.52;  // depression angle — negative tilts far-end downward
-      const CAM_DIST  = 1.8;    // perspective camera distance; keeps all denoms > 0.7
+      function bowlZ(r) {
+        const t = (R_OUTER - r) / R_OUTER;
+        return Z_DEPTH * t * t;
+      }
 
-      /* 3D position of a surface point (ring index i, angle θ) */
       function surfacePoint(ri, theta) {
-        /* ri normalised 0→1 maps outer→throat (animation flows inward) */
-        const r   = R_OUTER - (R_OUTER - R_THROAT) * ri;
-        /* Bowl height: paraboloid z(r) = 2√(RS·(r−RS)) clamped for r>RS */
-        const zb  = (r > RS) ? 2 * Math.sqrt(RS * (r - RS)) : 0;
-        return {
-          x: r  * Math.cos(theta),
-          y: r  * Math.sin(theta),
-          z: zb                        // "depth into screen" after camera tilt
-        };
+        const r = R_OUTER + (R_THROAT - R_OUTER) * ri;
+        return { x: r * Math.cos(theta), y: r * Math.sin(theta), z: bowlZ(r) };
       }
 
       /* Perspective projection with X-axis tilt */
@@ -1002,11 +981,10 @@
           return { ri, i };
         }).sort((a, b) => a.ri - b.ri);
 
-        /* ── Draw rings (smooth circles) ── */
+        /* Rings */
         for (const { ri } of rings) {
           const a = ringAlpha(ri);
-          if (a < 0.007) continue;
-          const r  = R_OUTER - (R_OUTER - R_THROAT) * ri;
+          if (a < 0.006) continue;
           const lw = Math.max(0.3, (1 - ri) * 1.6);
 
           ctx.beginPath();
@@ -1046,31 +1024,25 @@
         W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
 
-        /* SCALE: outer ring (ri=0, r=R_OUTER, z=bowl_height) projects to ≈80%
-           beyond each screen half-width — ring bursts beyond all 4 edges.     */
-        SCALE = W * 0.80;
+        const sinT = Math.sin(TILT);   // -0.4969
+        const cosT = Math.cos(TILT);   //  0.8678
 
-        /* CY: place the singularity (throat centre projected on-axis) at 55% H */
-        const sinT  = Math.sin(TILT);
-        const cosT  = Math.cos(TILT);
-        const zb0   = 2 * Math.sqrt(RS * (R_THROAT - RS + RS));  // throat zb ≈ 0
-        /* On-axis throat: x=0, y=0, z=0 → after tilt: yT=0, dSng=CAM_DIST */
-        /* Outer near-arc (θ=−π/2, r=R_OUTER) gives the near-cam anchor      */
-        const zbOut = 2 * Math.sqrt(RS * Math.max(0, R_OUTER - RS));
-        const yN  = -R_OUTER, zN = zbOut;                         // near arc 3D y,z
-        const yTN = yN * cosT - zN * sinT;
-        const zTN = yN * sinT + zN * cosT;
-        const dN  = zTN + CAM_DIST;
-        /* Singularity on-axis: yT=0, zT=0, d=CAM_DIST */
-        const nSng = 0;                                            // px=W/2, py=CY
-        /* near-arc normalised y */
-        const nNear = yTN / dN;
+        /* Throat on-axis anchor (x=0, y=0, z=bowlZ(0)=Z_DEPTH) */
+        const zThr  = Z_DEPTH;
+        const yTSng = -zThr * sinT;
+        const dSng  =  zThr * cosT + CAM_DIST;
+        const nSng  = yTSng / dSng;       // ≈ +0.142 (projects below CY)
 
-        /* Pin: singularity at 55% H, near-arc 28% above screen top */
-        CY = H * 0.55;   // singularity lands at H*0.55 when nSng=0
-        /* Shift CY so near-arc sits ~28% above screen */
-        const nearPy = nNear * SCALE + CY;
-        CY -= nearPy + H * 0.28;   // push CY until nearPy = -H*0.28
+        /* Outer near-arc anchor (θ=−π/2, r=R_OUTER, z=0) */
+        const yTNear = -R_OUTER * cosT;
+        const dNear  =  R_OUTER * (-sinT) + CAM_DIST;  // sinT<0, so -sinT>0
+        const nNear  = yTNear / dNear;    // ≈ -0.378 (projects above CY)
+
+        /* Two-constraint solve:
+             nSng  * SCALE + CY = H * 0.60   throat at 60% height
+             nNear * SCALE + CY = H * (-0.30) near-arc 30% above screen     */
+        SCALE = H * 0.90 / (nSng - nNear);
+        CY    = H * 0.60 - nSng * SCALE;
       }
 
       window.addEventListener('resize', init);
