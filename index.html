@@ -960,10 +960,8 @@
         return { px: x / d * SCALE + W * 0.5, py: yT / d * SCALE + CY };
       }
 
-      /* Opacity: outer rings bright, gentler fade so centre stays visible */
       function ringAlpha(ri) {
-        const fadeIn = Math.min(1, ri * 55);
-        return fadeIn * Math.pow(1 - ri, 1.1) * 0.75;
+        return Math.min(1, ri * 55) * Math.pow(1 - ri, 0.55) * 0.70;
       }
 
       let clk = 0, lt = 0;
