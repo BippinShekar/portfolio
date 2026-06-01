@@ -923,82 +923,179 @@
     (function () {
       const canvas = document.getElementById('neural-canvas');
       const ctx    = canvas.getContext('2d');
-      let W, H, nodes;
-      const N       = 55;
-      const MAX_D   = 170;
 
-      function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
+      /* ── Perlin noise (2D gradient, Fisher-Yates permutation) ── */
+      const perm = new Uint8Array(512);
+      (function () {
+        const p = Array.from({ length: 256 }, (_, i) => i);
+        for (let i = 255; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+        }
+        for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+      })();
+      const G2 = [[1,0],[-1,0],[0,1],[0,-1],[.707,.707],[-.707,.707],[.707,-.707],[-.707,-.707]];
+      const fade = t => t*t*t*(t*(t*6-15)+10);
+      const lerp = (t,a,b) => a+t*(b-a);
+      function noise(x, y) {
+        const X = Math.floor(x)&255, Y = Math.floor(y)&255;
+        x -= Math.floor(x); y -= Math.floor(y);
+        const u = fade(x), v = fade(y);
+        const A = perm[X]+Y, B = perm[X+1]+Y;
+        const g00=G2[perm[A]&7], g10=G2[perm[B]&7], g01=G2[perm[A+1]&7], g11=G2[perm[B+1]&7];
+        return lerp(v,
+          lerp(u, g00[0]*x+g00[1]*y,       g10[0]*(x-1)+g10[1]*y),
+          lerp(u, g01[0]*x+g01[1]*(y-1),   g11[0]*(x-1)+g11[1]*(y-1))
+        );
       }
 
-      function init() {
-        nodes = Array.from({ length: N }, () => {
-          const vx = (Math.random() - 0.5) * 0.3;
-          const vy = (Math.random() - 0.5) * 0.3;
-          return { x: Math.random() * W, y: Math.random() * H, vx, vy, bvx: vx, bvy: vy, r: Math.random() * 1.5 + 0.5 };
+      /* ── State ── */
+      let W, H, clock = 0;
+      let nodes = [], particles = [], pulses = [];
+
+      const FLOW_SCALE    = 0.0022;
+      const PARTICLE_COUNT = 130;
+      const NODE_RX = [.13, .85, .47, .22, .80, .60, .91];
+      const NODE_RY = [.22, .15, .09, .73, .60, .88, .80];
+
+      function d2(a, b) { return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2); }
+
+      function initNodes() {
+        nodes = NODE_RX.map((rx, i) => ({
+          x: rx*W, y: NODE_RY[i]*H, rx, ry: NODE_RY[i],
+          connections: [], glow: 0,
+          pulseTimer: 1500 + i*700 + Math.random()*3000
+        }));
+        nodes.forEach((node, i) => {
+          const byDist = nodes
+            .map((m, j) => ({ m, j, d: d2(node, m) }))
+            .filter(o => o.j !== i)
+            .sort((a, b) => a.d - b.d);
+          node.connections.push(byDist[0].m);
+          if (Math.random() < 0.55) {
+            const pool = nodes.filter((m, j) => j !== i && !node.connections.includes(m));
+            if (pool.length) node.connections.push(pool[Math.floor(Math.random()*pool.length)]);
+          }
         });
       }
 
-      function draw() {
-        ctx.clearRect(0, 0, W, H);
+      function initParticles() {
+        particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+          x: Math.random()*W, y: Math.random()*H,
+          age: Math.random(), speed: .35+Math.random()*.45
+        }));
+      }
 
-        for (let i = 0; i < nodes.length; i++) {
-          for (let j = i + 1; j < nodes.length; j++) {
-            const dx = nodes[i].x - nodes[j].x;
-            const dy = nodes[i].y - nodes[j].y;
-            const d  = Math.sqrt(dx * dx + dy * dy);
-            if (d < MAX_D) {
-              const t = 1 - d / MAX_D;
-              ctx.strokeStyle = `rgba(160,160,160,${t * 0.28})`;
-              ctx.lineWidth   = 0.7;
-              ctx.beginPath();
-              ctx.moveTo(nodes[i].x, nodes[i].y);
-              ctx.lineTo(nodes[j].x, nodes[j].y);
-              ctx.stroke();
-            }
+      function qbez(p0, cx, cy, p1, t) {
+        const m = 1-t;
+        return { x: m*m*p0.x+2*m*t*cx+t*t*p1.x, y: m*m*p0.y+2*m*t*cy+t*t*p1.y };
+      }
+
+      function spawnPulse(from, to) {
+        const mx=(from.x+to.x)/2, my=(from.y+to.y)/2;
+        const perp = Math.atan2(to.y-from.y, to.x-from.x)+Math.PI/2;
+        const bend = (55+Math.random()*85)*(Math.random()<.5?1:-1);
+        pulses.push({ from, to, cx:mx+Math.cos(perp)*bend, cy:my+Math.sin(perp)*bend,
+          progress:0, speed:.006+Math.random()*.004, trail:[] });
+      }
+
+      /* ── Update ── */
+      function update(dt) {
+        clock += dt * 0.001;
+
+        for (const p of particles) {
+          const angle = noise(p.x*FLOW_SCALE, p.y*FLOW_SCALE+clock*0.012) * Math.PI * 3.5;
+          let ax=0, ay=0;
+          for (const n of nodes) {
+            const dx=n.x-p.x, dy=n.y-p.y, d=Math.sqrt(dx*dx+dy*dy);
+            if (d<170&&d>1) { const pull=(1-d/170)*.10; ax+=dx/d*pull; ay+=dy/d*pull; }
+          }
+          p.x += Math.cos(angle)*p.speed+ax;
+          p.y += Math.sin(angle)*p.speed+ay;
+          p.age += 0.0016;
+          if (p.age>1) {
+            p.x=Math.random()*W; p.y=Math.random()*H; p.age=0; p.speed=.35+Math.random()*.45;
+          } else {
+            if(p.x<0) p.x+=W; if(p.x>W) p.x-=W;
+            if(p.y<0) p.y+=H; if(p.y>H) p.y-=H;
           }
         }
 
-        for (const n of nodes) {
+        for (const node of nodes) {
+          node.pulseTimer -= dt;
+          node.glow = Math.max(0, node.glow - dt*0.0018);
+          if (node.pulseTimer<=0 && node.connections.length) {
+            spawnPulse(node, node.connections[Math.floor(Math.random()*node.connections.length)]);
+            node.glow = 1;
+            node.pulseTimer = 3500+Math.random()*5000;
+          }
+        }
+
+        for (let i=pulses.length-1; i>=0; i--) {
+          const pulse = pulses[i];
+          const pt = qbez(pulse.from, pulse.cx, pulse.cy, pulse.to, pulse.progress);
+          pulse.trail.push({ x:pt.x, y:pt.y, a:.55 });
+          for (const tp of pulse.trail) tp.a -= 0.032;
+          pulse.trail = pulse.trail.filter(tp => tp.a>0);
+          pulse.progress += pulse.speed;
+          if (pulse.progress>=1) { pulse.to.glow=Math.min(1,pulse.to.glow+.9); pulses.splice(i,1); }
+        }
+      }
+
+      /* ── Draw ── */
+      function draw() {
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(0, 0, W, H);
+
+        for (const p of particles) {
+          const alpha = Math.sin(p.age*Math.PI)*0.13;
+          if (alpha<0.005) continue;
           ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(200,200,200,0.55)';
+          ctx.arc(p.x, p.y, .75, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(215,205,190,${alpha})`;
           ctx.fill();
         }
-      }
 
-      const mouse = { x: -9999, y: -9999 };
-      window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-      window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+        for (const node of nodes) {
+          const b  = .12+node.glow*.38;
+          const r  = 58+node.glow*28;
+          const gr = ctx.createRadialGradient(node.x,node.y,0, node.x,node.y,r);
+          gr.addColorStop(0,    `rgba(228,218,200,${b*.95})`);
+          gr.addColorStop(.45,  `rgba(228,218,200,${b*.28})`);
+          gr.addColorStop(1,    'rgba(0,0,0,0)');
+          ctx.beginPath(); ctx.arc(node.x,node.y,r,0,Math.PI*2); ctx.fillStyle=gr; ctx.fill();
+          ctx.beginPath(); ctx.arc(node.x,node.y,2+node.glow*1.2,0,Math.PI*2);
+          ctx.fillStyle=`rgba(245,235,215,${.45+node.glow*.45})`; ctx.fill();
+        }
 
-      const REPEL_R = 110, REPEL_F = 0.55, MAX_SPD = 2.2;
-
-      function update() {
-        for (const n of nodes) {
-          const dx = n.x - mouse.x, dy = n.y - mouse.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < REPEL_R && d > 0) {
-            const force = (1 - d / REPEL_R) * REPEL_F;
-            n.vx += (dx / d) * force;
-            n.vy += (dy / d) * force;
-            const spd = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
-            if (spd > MAX_SPD) { n.vx = (n.vx / spd) * MAX_SPD; n.vy = (n.vy / spd) * MAX_SPD; }
+        for (const pulse of pulses) {
+          for (const tp of pulse.trail) {
+            ctx.beginPath(); ctx.arc(tp.x,tp.y,1.3,0,Math.PI*2);
+            ctx.fillStyle=`rgba(245,235,215,${tp.a*.55})`; ctx.fill();
           }
-          /* damping — bleed excess speed back toward base drift */
-          n.vx += (n.bvx - n.vx) * 0.012;
-          n.vy += (n.bvy - n.vy) * 0.012;
-          n.x += n.vx;
-          n.y += n.vy;
-          if (n.x < 0 || n.x > W) { n.vx *= -1; n.bvx *= -1; }
-          if (n.y < 0 || n.y > H) { n.vy *= -1; n.bvy *= -1; }
+          const head = qbez(pulse.from,pulse.cx,pulse.cy,pulse.to,Math.min(pulse.progress,1));
+          const gh   = ctx.createRadialGradient(head.x,head.y,0, head.x,head.y,14);
+          gh.addColorStop(0,'rgba(255,248,230,.65)'); gh.addColorStop(1,'rgba(0,0,0,0)');
+          ctx.beginPath(); ctx.arc(head.x,head.y,14,0,Math.PI*2); ctx.fillStyle=gh; ctx.fill();
+          ctx.beginPath(); ctx.arc(head.x,head.y,2.2,0,Math.PI*2);
+          ctx.fillStyle='rgba(255,250,235,.9)'; ctx.fill();
         }
       }
 
-      function loop() { update(); draw(); requestAnimationFrame(loop); }
+      /* ── Loop ── */
+      let lastTs = 0;
+      function frame(ts) {
+        const dt = ts-lastTs||16; lastTs=ts;
+        update(dt); draw(); requestAnimationFrame(frame);
+      }
 
-      window.addEventListener('resize', () => { resize(); init(); });
-      resize(); init(); loop();
+      function init() {
+        W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;
+        initNodes(); initParticles();
+      }
+
+      window.addEventListener('resize', init);
+      init(); requestAnimationFrame(frame);
     })();
 
     /* ── Typewriter ── */
