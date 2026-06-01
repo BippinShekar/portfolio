@@ -47,6 +47,97 @@
       pointer-events: none;
     }
 
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--mid);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
+      flex-shrink: 0;
+    }
+
+    .leaps-meta {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .leaps-date {
+      font-size: 0.72rem;
+      color: var(--dim);
+      font-weight: 400;
+      letter-spacing: 0.06em;
+    }
+
+    .leaps-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.3rem;
+      line-height: 1.05;
+    }
+
+    .leaps-subtitle {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--mid);
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .leaps-alpha-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      margin: 2.5rem 0;
+      max-width: 540px;
+    }
+
+    .alpha-cell {
+      padding: 1.2rem 1.4rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .alpha-cell:last-child { border-right: none; }
+
+    .alpha-num {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+
+    .alpha-label {
+      font-size: 0.66rem;
+      color: var(--dim);
+      line-height: 1.45;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+    }
+
+    #building { padding: 7rem 2.5rem; }
+
     section { position: relative; z-index: 1; }
 
     .wrap {
@@ -435,18 +526,48 @@
   <section id="building">
     <div class="wrap">
 
-      <p class="sec-eyebrow">Building</p>
-      <h2 class="sec-title">
-        <a href="https://leaps.to" target="_blank" rel="noopener" style="color:inherit;">Leaps.to</a><sup style="font-size:0.7rem; color:var(--white); margin-left:0.25em; vertical-align:top; position:relative; top:0.15em;">↗</sup>
-      </h2>
+      <p class="sec-eyebrow">Currently Building</p>
 
-      <p class="exp-role fade-in" style="margin-bottom: 1rem;">AI-Powered Career Intelligence Platform</p>
-      <p class="exp-desc fade-in" style="max-width: 640px;">
-        Leaps.to fixes a broken hiring system where 75% of resumes never reach a human reviewer.
-        It scores your profile against target roles, generates personalized career roadmaps, and
-        automates daily applications to matched positions — eliminating ATS barriers that screen
-        for keywords over capability. Built to become the default platform for intelligent job searching in the AI era.
+      <div class="fade-in">
+        <div class="status-badge">Live &middot; Alpha</div>
+        <div class="leaps-meta">
+          <span class="leaps-date">Dec 2025 &ndash; Present</span>
+          <span class="leaps-date">&middot; Founder &amp; Lead Engineer</span>
+        </div>
+        <h2 class="leaps-title">
+          <a href="https://leaps.to" target="_blank" rel="noopener" style="color:inherit;">Leaps</a><sup style="font-size:0.7rem; color:var(--mid); margin-left:0.2em; vertical-align:top; position:relative; top:0.2em;">↗</sup>
+        </h2>
+        <p class="leaps-subtitle">AI-native career execution platform</p>
+      </div>
+
+      <p class="exp-desc fade-in" style="max-width: 660px; margin-bottom: 2rem;">
+        Replaces volume-based job searching with fit-driven execution — the system scores candidate fit,
+        identifies skill gaps, and autonomously applies to high-match roles while you sleep.
+        Built because the frustration was real: my co-founder spent a month sending 100+ applications
+        and converted zero interviews. Week one of Leaps alpha: 47 applications, 2 interviews.
       </p>
+
+      <div class="leaps-alpha-strip fade-in">
+        <div class="alpha-cell">
+          <div class="alpha-num">47</div>
+          <div class="alpha-label">Applications filled, week 1 alpha</div>
+        </div>
+        <div class="alpha-cell">
+          <div class="alpha-num">2</div>
+          <div class="alpha-label">Interviews landed (vs 0 from 100+ prior)</div>
+        </div>
+        <div class="alpha-cell">
+          <div class="alpha-num">0→4.3%</div>
+          <div class="alpha-label">Interview conversion rate</div>
+        </div>
+      </div>
+
+      <ul class="exp-bullets fade-in" style="max-width: 660px;">
+        <li>Engineered autonomous application systems for <strong style="color:var(--off); font-weight:500;">LinkedIn</strong> (multi-step, turn-based, dynamically structured per company) and <strong style="color:var(--off); font-weight:500;">Ashby</strong> (single-form with company-specific open-ended fields requiring contextual candidate reasoning) — two fundamentally different automation problems unified under one architecture.</li>
+        <li>Designed the full multi-agent pipeline: resume parsing → fit scoring → skill gap analysis → stateful execution agents that navigate dynamic application flows end to end.</li>
+        <li>Built the fit scoring and skill gap engine that determines match quality before a single application is sent, replacing spray-and-pray volume with precision targeting.</li>
+        <li>Sole engineer — architecting, building, and shipping the entire system from infrastructure to agent orchestration.</li>
+      </ul>
 
     </div>
   </section>
