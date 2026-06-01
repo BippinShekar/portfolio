@@ -925,15 +925,17 @@
       const ctx    = canvas.getContext('2d');
       let W, H, SCALE, CY;
 
-      const RINGS    = 32;
-      const SPOKES   = 26;
-      const DEPTH    = 9.0;
-      const SPEED    = 0.18;
-      const TILT     = -0.50;  // 28.6° — camera sees funnel at steep angle, far-end drops
-      const CAM_DIST = 1.0;    // camera close to funnel mouth — outer ring bursts off all edges
+      const RINGS    = 34;
+      const SPOKES   = 28;
+      const DEPTH    = 6.0;
+      const SPEED    = 0.17;
+      /* TILT=-0.75 (43°). CAM_DIST=2.0 keeps every ring-point denominator >0.6,
+         preventing the "half ring" projection artefact at CAM_DIST=1.0          */
+      const TILT     = -0.75;
+      const CAM_DIST = 2.0;
 
       function fR(z) {
-        return 1.9 * Math.pow(Math.max(0, 1.0 - z / DEPTH), 0.50);
+        return 2.0 * Math.pow(Math.max(0, 1.0 - z / DEPTH), 0.50);
       }
 
       function proj(theta, z) {
@@ -943,13 +945,13 @@
         const yT = y * Math.cos(TILT) - z * Math.sin(TILT);
         const zT = y * Math.sin(TILT) + z * Math.cos(TILT);
         const d  = zT + CAM_DIST;
-        if (d < 0.001) return null;
+        if (d < 0.05) return null;
         return { px: x / d * SCALE + W * 0.5, py: yT / d * SCALE + CY };
       }
 
       function ringA(z) {
         const t = z / DEPTH;
-        return Math.min(1, t * 20) * Math.pow(1 - t, 1.75) * 0.65;
+        return Math.min(1, t * 18) * Math.pow(1 - t, 1.8) * 0.62;
       }
 
       let clk = 0, lt = 0;
@@ -965,25 +967,24 @@
           ((i / RINGS * DEPTH) + clk * SPEED) % DEPTH
         ).map((z, i) => ({ z, i })).sort((a, b) => a.z - b.z);
 
-        /* Rings */
+        /* ── Rings — no closePath() to avoid stray cross-screen lines ── */
         for (const { z } of sorted) {
           const a = ringA(z);
           if (a < 0.007) continue;
           ctx.beginPath();
           let f = true;
-          for (let s = 0; s <= SPOKES; s++) {
+          for (let s = 0; s <= SPOKES; s++) {  // s=SPOKES repeats theta=0 → closes loop
             const pt = proj((s / SPOKES) * Math.PI * 2, z);
             if (!pt) { f = true; continue; }
             if (f) { ctx.moveTo(pt.px, pt.py); f = false; }
             else    ctx.lineTo(pt.px, pt.py);
           }
-          ctx.closePath();
           ctx.strokeStyle = `rgba(225,220,215,${a})`;
           ctx.lineWidth = Math.max(0.2, (1 - z / DEPTH) * 1.4);
           ctx.stroke();
         }
 
-        /* Spokes */
+        /* ── Spokes ── */
         for (let s = 0; s < SPOKES; s++) {
           const theta = (s / SPOKES) * Math.PI * 2;
           ctx.beginPath();
@@ -1006,23 +1007,24 @@
         W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
 
-        const cosT = Math.cos(TILT);
-        const sinT = Math.sin(TILT);
-        const R0   = fR(0);   // = 1.9
+        const cosT = Math.cos(TILT);   //  0.7317
+        const sinT = Math.sin(TILT);   // -0.6816
+        const R0   = fR(0);            //  2.0
 
-        /* Normalised screen-y of two anchor points (before SCALE/CY applied):
-           nBot = yT/denom for the near-camera arc of the outer ring (theta=-π/2, z=0)
-           nSng = yT/denom for the singularity (on-axis, z=DEPTH)              */
-        const dBot = (-R0 * sinT) + CAM_DIST;   // positive: near-cam side in front
-        const nBot = (-R0 * cosT) / dBot;        // ≈ -0.872  (appears above CY)
+        /* nBot: normalised screen-y of near-camera arc of outer ring (theta=-π/2, z=0)
+           nSng: normalised screen-y of singularity (on-axis, z=DEPTH)
+           With TILT=-0.75, CAM_DIST=2.0, R0=2.0:
+             dBot = R0*|sinT| + CAM_DIST ≈ 1.363 + 2.0 = 3.363   (safe, > 0)
+             dSng = DEPTH*cosT + CAM_DIST ≈ 4.390 + 2.0 = 6.390  (safe)           */
+        const dBot = (-R0 * sinT) + CAM_DIST;
+        const nBot = (-R0 * cosT) / dBot;        // ≈ -0.435
 
-        const dSng = (DEPTH * cosT) + CAM_DIST;  // singularity depth
-        const nSng = (-DEPTH * sinT) / dSng;     // ≈ +0.485  (appears below CY)
+        const dSng = (DEPTH * cosT) + CAM_DIST;
+        const nSng = (-DEPTH * sinT) / dSng;     // ≈ +0.639
 
-        /* Pin outer arc to H*0.03 (just peeking at screen top)
-           and singularity to H*0.62 — solves two equations for SCALE and CY */
-        SCALE = H * 0.59 / (nSng - nBot);
-        CY    = H * 0.03 - nBot * SCALE;
+        /* Pin: outer near-arc 15% above screen top, singularity at 62% height */
+        SCALE = H * 0.77 / (nSng - nBot);
+        CY    = -H * 0.15 - nBot * SCALE;
       }
 
       window.addEventListener('resize', init);
