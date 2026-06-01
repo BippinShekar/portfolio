@@ -170,6 +170,29 @@
     .line-output.mb     { margin-bottom: 0.6rem; }
     .line-output.empty  { height: 0.8rem; }
 
+    /* ── Scroll hint ── */
+    .term-body { position: relative; }
+
+    #scroll-hint {
+      position: absolute;
+      bottom: 1.1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      color: rgba(212, 160, 23, 0.4);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      white-space: nowrap;
+      animation: hint-pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes hint-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
     /* ── Blinking block cursor ── */
     .cursor {
       display: inline-block;
@@ -363,6 +386,7 @@
             <!-- Lines injected by JS -->
           </div>
         </div>
+        <div id="scroll-hint">scroll &darr;</div>
       </div>
 
     </div>
@@ -580,19 +604,18 @@
       let   leapsShowTimer = null;
 
       function scaleLeapsIframe() {
+        const winW = leapsWin.offsetWidth;
+        if (winW <= 0) { requestAnimationFrame(scaleLeapsIframe); return; }
+        const scale  = winW / 1280;
         const bodyEl = leapsWin.querySelector('.leaps-win-body');
-        const bodyW  = bodyEl.offsetWidth;
-        if (bodyW <= 0) return;
-        const scale = bodyW / 1280;
         leapsIframe.style.transform = 'scale(' + scale.toFixed(4) + ')';
-        // Show only the above-the-fold hero (~620px of the 900px source height)
         bodyEl.style.height = Math.round(620 * scale) + 'px';
       }
 
       function showLeapsWindow() {
         leapsShowTimer = null;
-        scaleLeapsIframe();
         leapsWin.classList.add('visible');
+        requestAnimationFrame(scaleLeapsIframe);
       }
 
       function hideLeapsWindow() {
@@ -623,13 +646,14 @@
 
         /* 0: whoami */
         [
-          ['line-output bright mt', 'Desham Bippin Shekar Goud'],
-          ['line-output dim',       'Founder &amp; AI Systems Architect'],
+          ['line-output bright mt', 'D Bippin Shekar Goud'],
+          ['line-output dim',       'Founder &amp; Lead Engineer, Leaps'],
           ['line-output empty',     ''],
-          ['line-output', 'Currently founding Leaps: autonomous multi-agent job execution.'],
-          ['line-output', 'Before that: founding AI engineer at two early-stage companies,'],
-          ['line-output', 'building enterprise T2SQL engines, VoC pipelines at 100K+ inputs/day,'],
-          ['line-output', 'and agentic systems from scratch.'],
+          ['line-output', 'Three founding engineer roles. Pre-product or very early at each.'],
+          ['line-output', 'Built T2SQL engines, agentic VoC pipelines, and an autonomous'],
+          ['line-output', 'job application system from scratch.'],
+          ['line-output empty', ''],
+          ['line-output dim', 'The thread: build the thing the slow path never builds.'],
           ['line-output empty', ''],
         ],
 
@@ -642,87 +666,107 @@
 
         /* 2: cat about.txt */
         [
-          ['line-output bright mt', 'Name &nbsp;&nbsp; Desham Bippin Shekar Goud'],
-          ['line-output',           'Role &nbsp;&nbsp; Founder &amp; AI Systems Architect'],
+          ['line-output bright mt', 'Name &nbsp;&nbsp; D Bippin Shekar Goud'],
+          ['line-output',           'Role &nbsp;&nbsp; Founder &amp; Lead Engineer'],
           ['line-output empty', ''],
-          ['line-output dim',  '─────────────────────────────────'],
-          ['line-output bright', 'Stats'],
-          ['line-output', '  40% &nbsp;&nbsp;&nbsp;&nbsp; latency reduction'],
-          ['line-output', '  33× &nbsp;&nbsp;&nbsp;&nbsp; throughput increase'],
-          ['line-output', '  100K+ &nbsp;&nbsp; inputs / day processed'],
-          ['line-output', '  98% &nbsp;&nbsp;&nbsp;&nbsp; T2SQL generation accuracy'],
-          ['line-output', '  0→4.3% &nbsp; interview conversion rate (Leaps week-1)'],
+          ['line-output bright', 'Numbers that shipped'],
+          ['line-output empty', ''],
+          ['line-output green', '  80s -> 40-50s &nbsp;&nbsp; latency cut at Pulsegen (rebuilt the whole system)'],
+          ['line-output green', '  33x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throughput on the VoC pipeline'],
+          ['line-output green', '  100K+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; feedback inputs/day in production'],
+          ['line-output green', '  80% -> 98% &nbsp;&nbsp;&nbsp; SQL generation accuracy (QLoRA + guardrails)'],
+          ['line-output green', '  55% -> 85%+ &nbsp;&nbsp; SQL execution success'],
+          ['line-output green', '  0 -> 4.3% &nbsp;&nbsp;&nbsp;&nbsp; interview conversion, Leaps week-1 alpha'],
           ['line-output empty', ''],
         ],
 
         /* 3: cat leaps.md */
         [
-          ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">↗ leaps.to</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; Live · Alpha'],
-          ['line-output dim', 'Period &nbsp;&nbsp; Dec 2025 - Present'],
+          ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">leaps.to ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Live · Alpha &nbsp;&nbsp; Since Dec 2025'],
           ['line-output dim', 'Role &nbsp;&nbsp;&nbsp;&nbsp; Founder &amp; Lead Engineer'],
           ['line-output empty', ''],
-          ['line-output', 'AI-native career execution platform. Replaces volume-based job'],
-          ['line-output', 'searching with fit-driven execution. Scores candidate fit,'],
-          ['line-output', 'identifies skill gaps, and autonomously applies to high-match roles.'],
+          ['line-output', 'Job hunting is mostly noise. Leaps replaces volume with fit:'],
+          ['line-output', 'score your resume against listings, surface the gaps, then'],
+          ['line-output', 'autonomously apply to roles where you actually match.'],
           ['line-output empty', ''],
-          ['line-output bright', 'Alpha results (week 1)'],
-          ['line-output green',  '  47 &nbsp;&nbsp; applications filled'],
-          ['line-output green',  '   2 &nbsp;&nbsp; interviews landed &nbsp; (vs 0 from 100+ prior manual)'],
-          ['line-output green',  '   0 → 4.3%   conversion rate'],
+          ['line-output bright', 'Week-1 alpha'],
+          ['line-output green',  '  47 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; applications filed'],
+          ['line-output green',  '   2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; interviews &nbsp;(vs 0 from 100+ sent manually by co-founder)'],
+          ['line-output green',  '  0 -> 4.3% &nbsp;&nbsp;&nbsp; conversion rate'],
           ['line-output empty', ''],
-          ['line-output dim', 'Stack &nbsp;&nbsp; multi-agent orchestration · LinkedIn automation'],
-          ['line-output dim', '         Ashby automation · fit scoring · gap analysis'],
+          ['line-output dim', 'resume parser -> fit scorer -> gap analyst -> apply agents'],
+          ['line-output dim', 'LinkedIn (multi-step, turn-based) + Ashby (single-form,'],
+          ['line-output dim', 'open-ended fields) unified under one architecture.'],
           ['line-output empty', ''],
         ],
 
-        /* 4: open leaps.to — sub-window spawned in Stage 4, stub output here */
+        /* 4: open leaps.to */
         [
-          ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://leaps.to</a> …'],
+          ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://leaps.to</a> ...'],
           ['line-output empty', ''],
         ],
 
         /* 5: cat experience.md */
         [
-          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer: Agentic Copilot'],
-          ['line-output', '  -Architected agentic AI copilot: raw feedback → structured intelligence'],
-          ['line-output', '  -VoC ingestion pipelines scaling to 100K+ inputs / day'],
-          ['line-output', '  -40% end-to-end latency reduction via retrieval &amp; memory optimization'],
-          ['line-output', '  -Full lifecycle: architecture → infra → evaluation → iteration'],
+          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Jan 2026'],
           ['line-output empty', ''],
-          ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer: Neutrino Platform'],
-          ['line-output', '  -Designed Neutrino: full-stack generative AI enterprise insights system'],
-          ['line-output', '  -Multi-agent routing: T2SQL, RAG, workflow agents, live research'],
-          ['line-output', '  -+17% T2SQL accuracy via metadata-aware prompting + LoRA fine-tuning'],
-          ['line-output', '  -Hybrid RAG infrastructure: 20% faster search'],
-          ['line-output', '  -$500K+ enterprise lead pipeline impact'],
+          ['line-output', '  Inherited a stateless, prompt-based analytics bot.'],
+          ['line-output', '  Rebuilt it into a full agentic TypeScript system over MongoDB'],
+          ['line-output', '  with Text-to-Mongo query gen and a contextual memory layer'],
+          ['line-output', '  the original had none of.'],
+          ['line-output empty', ''],
+          ['line-output green', '  Latency: 80s -> 40-50s (40% cut) &nbsp; Throughput: 33x'],
+          ['line-output green', '  Scale: 100K+ inputs/day in production'],
+          ['line-output empty', ''],
+          ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sept 2024 - Nov 2025'],
+          ['line-output empty', ''],
+          ['line-output', '  T2SQL across PostgreSQL, MySQL, and Iceberg (200+ tables).'],
+          ['line-output', '  Metadata jargon layer mapped business terms to actual columns'],
+          ['line-output', '  so users never needed to know data team naming conventions.'],
+          ['line-output empty', ''],
+          ['line-output', '  Fine-tuned Llama 70B (QLoRA) + OpenAI on 60K+ SQL pairs.'],
+          ['line-output green', '  SQL gen: 80% -> 98% &nbsp;&nbsp; Execution: 55% -> 85%+'],
+          ['line-output', '  Pre/post guardrails + correction layers close the gap.'],
+          ['line-output empty', ''],
+          ['line-output', '  Conversational routing: T2SQL, RAG, workflow, web research.'],
+          ['line-output', '  Redis-backed hierarchical memory, not rolling context windows.'],
+          ['line-output', '  LangChain -> LangGraph -> direct SDK (removed all black boxes).'],
+          ['line-output', '  Go backend + self-hosted Kubernetes throughout.'],
           ['line-output empty', ''],
         ],
 
         /* 6: cat projects.md */
         [
-          ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; In Development &nbsp;·&nbsp; Open Source'],
+          ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source'],
           ['line-output empty', ''],
-          ['line-output', 'Open-source developer tooling for AI-assisted workflows.'],
-          ['line-output', 'Built from personal frustration with day-to-day AI tooling.'],
-          ['line-output empty', ''],
-          ['line-output', 'Context management · prompt iteration · evaluation loops.'],
+          ['line-output', '  Built out of personal frustration with existing AI dev tooling.'],
+          ['line-output', '  Context management, prompt iteration, eval loops: the things'],
+          ['line-output', '  that matter most are afterthoughts everywhere else.'],
           ['line-output empty', ''],
         ],
 
         /* 7: cat stack.txt */
         [
-          ['line-output bright mt', 'Languages &nbsp;&nbsp;&nbsp; Python &nbsp; GoLang &nbsp; SQL &nbsp; TypeScript &nbsp; Bash'],
+          ['line-output bright mt', 'Languages &nbsp;&nbsp;&nbsp;&nbsp; Python · Go · TypeScript · SQL · Bash'],
           ['line-output empty', ''],
-          ['line-output bright', 'Frameworks &nbsp;&nbsp; FastAPI &nbsp; Flask &nbsp; Next.js &nbsp; React'],
-          ['line-output', '             RESTful APIs &nbsp; GraphQL'],
+          ['line-output bright', 'Backend &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FastAPI · Go services · Redis · REST APIs · GraphQL'],
           ['line-output empty', ''],
-          ['line-output bright', 'Dev Tools &nbsp;&nbsp;&nbsp; Kubernetes &nbsp; Docker &nbsp; Git'],
+          ['line-output bright', 'Frontend &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next.js · React'],
           ['line-output empty', ''],
-          ['line-output bright', 'AI / ML &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpenAI &nbsp; Gemini &nbsp; LangChain &nbsp; LangGraph &nbsp; LangFlow'],
-          ['line-output', '             Transformers &nbsp; Ollama &nbsp; PyTorch &nbsp; TensorFlow'],
-          ['line-output', '             Scikit-learn &nbsp; NLTK'],
+          ['line-output bright', 'AI / ML &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpenAI · Gemini · Llama · PyTorch · TensorFlow'],
+          ['line-output empty', ''],
+          ['line-output bright', 'LLM Systems &nbsp;&nbsp; RAG · Fine-tuning (QLoRA, LoRA)'],
+          ['line-output', '               Evaluation · Guardrails · HITL Architectures'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Vector &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FAISS · Pinecone · Weaviate'],
+          ['line-output', '               Hybrid Search · Semantic Search · Embeddings'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Agents &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Multi-Agent · LangGraph · Tool Calling'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Infra &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Docker · Kubernetes · PostgreSQL · MySQL'],
+          ['line-output', '               MongoDB · Redis · Data Lakes (Iceberg)'],
           ['line-output empty', ''],
         ],
 
@@ -733,7 +777,7 @@
           ['line-output bright',    'LinkedIn &nbsp;&nbsp; <a href="https://www.linkedin.com/in/bippin-shekar001/" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">linkedin.com/in/bippin-shekar001 ↗</a>'],
           ['line-output bright',    'GitHub &nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar ↗</a>'],
           ['line-output empty', ''],
-          ['line-output dim', '- Available for the right opportunity.'],
+          ['line-output dim', 'Open to founding engineer roles and AI infrastructure work.'],
           ['line-output empty', ''],
         ],
       ];
@@ -801,6 +845,7 @@
               step.after();
             }
             addPrompt('', true);
+            setTimeout(checkProgress, 160);
           });
         });
       }
@@ -850,29 +895,33 @@
         });
       }
 
-      /* ── Scroll engine ── */
-      function onScroll() {
-        if (state.looping) return;
+      /* ── Progress check: activates next pending step or triggers loop.
+         Called both from scroll events and after each step completes,
+         so fast-scrolling auto-chains through remaining steps. ── */
+      function checkProgress() {
+        if (state.looping || state.typing) return;
 
         const maxY     = document.documentElement.scrollHeight - window.innerHeight;
         const progress = maxY > 0 ? window.scrollY / maxY : 0;
 
-        progressEl.style.width = (progress * 100).toFixed(2) + '%';
-
-        // All steps done + near end → loop
-        if (
-          state.activated === STEPS.length - 1 &&
-          !state.typing   &&
-          progress >= 0.96
-        ) {
+        if (state.activated === STEPS.length - 1 && progress >= 0.96) {
           triggerLoop();
           return;
         }
 
         const next = state.activated + 1;
-        if (next < STEPS.length && progress >= STEPS[next].startAt && !state.typing) {
+        if (next < STEPS.length && progress >= STEPS[next].startAt) {
           activateStep(next);
         }
+      }
+
+      /* ── Scroll engine ── */
+      function onScroll() {
+        if (state.looping) return;
+        const maxY     = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxY > 0 ? window.scrollY / maxY : 0;
+        progressEl.style.width = (progress * 100).toFixed(2) + '%';
+        checkProgress();
       }
 
       window.addEventListener('scroll', onScroll, { passive: true });
@@ -882,6 +931,14 @@
         addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
         addLine('line-output empty', '');
         addPrompt('', true);
+
+        // Hide scroll hint on first scroll
+        window.addEventListener('scroll', function hideHint() {
+          const hint = document.getElementById('scroll-hint');
+          if (hint) hint.style.opacity = '0';
+          window.removeEventListener('scroll', hideHint);
+        }, { passive: true, once: true });
+
         onScroll();
       }
 
