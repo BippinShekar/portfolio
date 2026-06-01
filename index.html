@@ -201,7 +201,7 @@
       top: calc(2vh + 3.2rem);
       right: calc(2.5vw + 0.4rem);
       width: min(48%, 580px);
-      height: calc(96vh - 3.2rem - 4vh);
+      height: auto;
       display: flex;
       flex-direction: column;
       background: #0c0c0c;
@@ -580,10 +580,13 @@
       let   leapsShowTimer = null;
 
       function scaleLeapsIframe() {
-        const bodyW = leapsWin.querySelector('.leaps-win-body').offsetWidth;
-        if (bodyW > 0) {
-          leapsIframe.style.transform = 'scale(' + (bodyW / 1280).toFixed(4) + ')';
-        }
+        const bodyEl = leapsWin.querySelector('.leaps-win-body');
+        const bodyW  = bodyEl.offsetWidth;
+        if (bodyW <= 0) return;
+        const scale = bodyW / 1280;
+        leapsIframe.style.transform = 'scale(' + scale.toFixed(4) + ')';
+        // Show only the above-the-fold hero (~620px of the 900px source height)
+        bodyEl.style.height = Math.round(620 * scale) + 'px';
       }
 
       function showLeapsWindow() {
