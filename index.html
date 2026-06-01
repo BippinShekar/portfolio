@@ -945,9 +945,9 @@
        * the viewer is effectively inside the bowl rim.
        */
       const RING_SEGS = 200;  // pts per ring — smooth, no polygon edges
-      const RINGS     = 26;
+      const RINGS     = 34;
       const SPOKES    = 22;
-      const SPEED     = 0.16;
+      const SPEED     = 0.045; // slow: rings take ~22s to traverse — smooth, not choppy
 
       /* Paraboloid parameters (world units) */
       const R_THROAT  = 0.10;   // event horizon radius (inner limit)
@@ -981,11 +981,10 @@
         return { px: x / d * SCALE + W * 0.5, py: yT / d * SCALE + CY };
       }
 
-      /* Opacity: outer rings bright, fades monotonically to singularity */
+      /* Opacity: outer rings bright, gentler fade so centre stays visible */
       function ringAlpha(ri) {
-        /* ri=0 is outer (bright), ri=1 is throat (dim) */
-        const fadeIn = Math.min(1, ri * 55);          // pop-prevention for new rings
-        return fadeIn * Math.pow(1 - ri, 1.6) * 0.72;
+        const fadeIn = Math.min(1, ri * 55);
+        return fadeIn * Math.pow(1 - ri, 1.1) * 0.75;
       }
 
       let clk = 0, lt = 0;
@@ -1008,7 +1007,7 @@
           const a = ringAlpha(ri);
           if (a < 0.007) continue;
           const r  = R_OUTER - (R_OUTER - R_THROAT) * ri;
-          const lw = Math.max(0.2, (1 - ri) * 1.6);
+          const lw = Math.max(0.3, (1 - ri) * 1.6);
 
           ctx.beginPath();
           let first = true;
