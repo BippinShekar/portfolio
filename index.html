@@ -925,26 +925,53 @@
       const ctx    = canvas.getContext('2d');
       let W, H, SCALE, CY;
 
-      /* RING_SEGS controls circle smoothness (180 pts ≈ no visible edges).
-         SPOKES controls how many radial grid lines there are — keep at 24.  */
-      const RING_SEGS = 180;
-      const RINGS     = 28;
-      const SPOKES    = 24;
-      const DEPTH     = 7.0;
-      const SPEED     = 0.17;
-      /* TILT -0.55 (31°), CAM_DIST 1.5: outer ring 21% off each side,
-         all denominators stay above 0.71 — no half-ring artefacts         */
-      const TILT      = -0.55;
-      const CAM_DIST  = 1.5;
+      /*
+       * Flamm's paraboloid — embedding diagram of Schwarzschild black hole geometry.
+       * The surface is a bowl: flat far from the hole, steepening sharply at the throat.
+       * Camera sits above and slightly to the side, looking down into the funnel.
+       *
+       * Coordinate system:
+       *   r   = radial distance on the bowl surface (large = outer flat region)
+       *   θ   = azimuthal angle around the funnel
+       *   z3d = bowl height = r_s * ln(r/r_s) (monotonic, 0 at throat)
+       *
+       * We parameterise as rings of equal r-spacing (matched to reference image):
+       *   ring i at r_i = r_throat + (r_outer - r_throat) * (i/N)^1 (linear in r)
+       *
+       * Viewing: camera elevated above the flat outer region, depression ~28°.
+       * SCALE set so the outermost ring extends ≈80% beyond each screen edge —
+       * the viewer is effectively inside the bowl rim.
+       */
+      const RING_SEGS = 200;  // pts per ring — smooth, no polygon edges
+      const RINGS     = 26;
+      const SPOKES    = 22;
+      const SPEED     = 0.16;
 
-      function fR(z) {
-        return 1.5 * Math.pow(Math.max(0, 1.0 - z / DEPTH), 0.52);
+      /* Paraboloid parameters (world units) */
+      const R_THROAT  = 0.10;   // event horizon radius (inner limit)
+      const R_OUTER   = 2.20;   // outer flat-region radius (gets scaled off-screen)
+      const RS        = 0.18;   // Schwarzschild scale (controls bowl steepness)
+
+      /* Viewing */
+      const TILT      = -0.52;  // depression angle — negative tilts far-end downward
+      const CAM_DIST  = 1.8;    // perspective camera distance; keeps all denoms > 0.7
+
+      /* 3D position of a surface point (ring index i, angle θ) */
+      function surfacePoint(ri, theta) {
+        /* ri normalised 0→1 maps outer→throat (animation flows inward) */
+        const r   = R_OUTER - (R_OUTER - R_THROAT) * ri;
+        /* Bowl height: paraboloid z(r) = 2√(RS·(r−RS)) clamped for r>RS */
+        const zb  = (r > RS) ? 2 * Math.sqrt(RS * (r - RS)) : 0;
+        return {
+          x: r  * Math.cos(theta),
+          y: r  * Math.sin(theta),
+          z: zb                        // "depth into screen" after camera tilt
+        };
       }
 
-      function proj(theta, z) {
-        const r  = fR(z);
-        const x  = r * Math.cos(theta);
-        const y  = r * Math.sin(theta);
+      /* Perspective projection with X-axis tilt */
+      function proj(pt) {
+        const { x, y, z } = pt;
         const yT = y * Math.cos(TILT) - z * Math.sin(TILT);
         const zT = y * Math.sin(TILT) + z * Math.cos(TILT);
         const d  = zT + CAM_DIST;
@@ -952,11 +979,11 @@
         return { px: x / d * SCALE + W * 0.5, py: yT / d * SCALE + CY };
       }
 
-      /* Outer rings (small z) are brightest — opacity falls monotonically
-         toward the singularity.  Quick fade-in at z≈0 prevents pop.       */
-      function ringA(z) {
-        const t = z / DEPTH;
-        return Math.min(1, t * 60) * Math.pow(1 - t, 1.8) * 0.70;
+      /* Opacity: outer rings bright, fades monotonically to singularity */
+      function ringAlpha(ri) {
+        /* ri=0 is outer (bright), ri=1 is throat (dim) */
+        const fadeIn = Math.min(1, ri * 55);          // pop-prevention for new rings
+        return fadeIn * Math.pow(1 - ri, 1.6) * 0.72;
       }
 
       let clk = 0, lt = 0;
@@ -968,40 +995,46 @@
         ctx.clearRect(0, 0, W, H);
         ctx.lineCap = 'round';
 
-        const sorted = Array.from({ length: RINGS }, (_, i) =>
-          ((i / RINGS * DEPTH) + clk * SPEED) % DEPTH
-        ).map((z, i) => ({ z, i })).sort((a, b) => a.z - b.z);
+        /* ri for each animated ring — flows from outer (ri=0) to throat (ri=1) */
+        const rings = Array.from({ length: RINGS }, (_, i) => {
+          const ri = ((i / RINGS) + clk * SPEED) % 1.0;
+          return { ri, i };
+        }).sort((a, b) => a.ri - b.ri);
 
-        /* Rings — 180 segments each so they appear as smooth circles */
-        for (const { z } of sorted) {
-          const a = ringA(z);
+        /* ── Draw rings (smooth circles) ── */
+        for (const { ri } of rings) {
+          const a = ringAlpha(ri);
           if (a < 0.007) continue;
+          const r  = R_OUTER - (R_OUTER - R_THROAT) * ri;
+          const lw = Math.max(0.2, (1 - ri) * 1.6);
+
           ctx.beginPath();
-          let f = true;
+          let first = true;
           for (let s = 0; s <= RING_SEGS; s++) {
-            const pt = proj((s / RING_SEGS) * Math.PI * 2, z);
-            if (!pt) { f = true; continue; }
-            if (f) { ctx.moveTo(pt.px, pt.py); f = false; }
-            else    ctx.lineTo(pt.px, pt.py);
+            const theta = (s / RING_SEGS) * Math.PI * 2;
+            const pt    = proj(surfacePoint(ri, theta));
+            if (!pt) { first = true; continue; }
+            if (first) { ctx.moveTo(pt.px, pt.py); first = false; }
+            else        ctx.lineTo(pt.px, pt.py);
           }
           ctx.strokeStyle = `rgba(225,220,215,${a})`;
-          ctx.lineWidth = Math.max(0.2, (1 - z / DEPTH) * 1.5);
+          ctx.lineWidth = lw;
           ctx.stroke();
         }
 
-        /* Spokes — 24 radial lines */
+        /* ── Draw spokes ── */
         for (let s = 0; s < SPOKES; s++) {
           const theta = (s / SPOKES) * Math.PI * 2;
           ctx.beginPath();
-          let f = true;
-          for (const { z } of sorted) {
-            const pt = proj(theta, z);
-            if (!pt) { f = true; continue; }
-            if (f) { ctx.moveTo(pt.px, pt.py); f = false; }
-            else    ctx.lineTo(pt.px, pt.py);
+          let first = true;
+          for (const { ri } of rings) {
+            const pt = proj(surfacePoint(ri, theta));
+            if (!pt) { first = true; continue; }
+            if (first) { ctx.moveTo(pt.px, pt.py); first = false; }
+            else        ctx.lineTo(pt.px, pt.py);
           }
-          ctx.strokeStyle = 'rgba(225,220,215,0.22)';
-          ctx.lineWidth = 0.55;
+          ctx.strokeStyle = 'rgba(225,220,215,0.20)';
+          ctx.lineWidth = 0.5;
           ctx.stroke();
         }
 
@@ -1012,22 +1045,31 @@
         W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
 
-        const cosT = Math.cos(TILT);   // 0.8525
-        const sinT = Math.sin(TILT);   // -0.5227
-        const R0   = fR(0);            // 1.5
+        /* SCALE: outer ring (ri=0, r=R_OUTER, z=bowl_height) projects to ≈80%
+           beyond each screen half-width — ring bursts beyond all 4 edges.     */
+        SCALE = W * 0.80;
 
-        /* Anchor points (normalised screen-y before SCALE/CY):
-           nBot: near-camera arc of outer ring  (theta=-π/2, z=0)
-           nSng: singularity                    (on-axis,    z=DEPTH)        */
-        const dBot = (-R0 * sinT) + CAM_DIST;   // 1.5*0.523+1.5 = 2.284
-        const nBot = (-R0 * cosT) / dBot;        // ≈ -0.559
+        /* CY: place the singularity (throat centre projected on-axis) at 55% H */
+        const sinT  = Math.sin(TILT);
+        const cosT  = Math.cos(TILT);
+        const zb0   = 2 * Math.sqrt(RS * (R_THROAT - RS + RS));  // throat zb ≈ 0
+        /* On-axis throat: x=0, y=0, z=0 → after tilt: yT=0, dSng=CAM_DIST */
+        /* Outer near-arc (θ=−π/2, r=R_OUTER) gives the near-cam anchor      */
+        const zbOut = 2 * Math.sqrt(RS * Math.max(0, R_OUTER - RS));
+        const yN  = -R_OUTER, zN = zbOut;                         // near arc 3D y,z
+        const yTN = yN * cosT - zN * sinT;
+        const zTN = yN * sinT + zN * cosT;
+        const dN  = zTN + CAM_DIST;
+        /* Singularity on-axis: yT=0, zT=0, d=CAM_DIST */
+        const nSng = 0;                                            // px=W/2, py=CY
+        /* near-arc normalised y */
+        const nNear = yTN / dN;
 
-        const dSng = (DEPTH * cosT) + CAM_DIST; // 7*0.852+1.5 = 7.466
-        const nSng = (-DEPTH * sinT) / dSng;    // 7*0.523/7.466 ≈ 0.490
-
-        /* Pin outer near-arc 25% above screen, singularity at 55% height */
-        SCALE = H * 0.80 / (nSng - nBot);
-        CY    = -H * 0.25 - nBot * SCALE;
+        /* Pin: singularity at 55% H, near-arc 28% above screen top */
+        CY = H * 0.55;   // singularity lands at H*0.55 when nSng=0
+        /* Shift CY so near-arc sits ~28% above screen */
+        const nearPy = nNear * SCALE + CY;
+        CY -= nearPy + H * 0.28;   // push CY until nearPy = -H*0.28
       }
 
       window.addEventListener('resize', init);
