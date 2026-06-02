@@ -188,6 +188,27 @@
       50%       { opacity: 0.25; }
     }
 
+    /* ── Resume download button in chrome ── */
+    .resume-btn {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(212, 160, 23, 0.25);
+      padding: 0.22rem 0.65rem;
+      border-radius: 3px;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .resume-btn:hover {
+      background: rgba(212, 160, 23, 0.08);
+      border-color: rgba(212, 160, 23, 0.5);
+    }
+
     /* ── Progress bar ── */
     .term-progress {
       position: absolute;
@@ -371,6 +392,7 @@
         </div>
         <div class="term-title">bippin@portfolio - zsh</div>
         <div class="term-progress" id="term-progress"></div>
+        <a href="resume.pdf" download="Bippin-Shekar-Goud-Resume.pdf" class="resume-btn">resume ↓</a>
       </div>
 
       <div class="term-body">
