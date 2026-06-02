@@ -720,13 +720,16 @@
         [
           ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Jan 2026'],
           ['line-output empty', ''],
-          ['line-output', '  Inherited a stateless, prompt-based analytics bot.'],
-          ['line-output', '  Rebuilt it into a full agentic TypeScript system over MongoDB'],
-          ['line-output', '  with Text-to-Mongo query gen and a contextual memory layer'],
-          ['line-output', '  the original had none of.'],
+          ['line-output dim', '  [1] Analytics bot'],
+          ['line-output', '  Inherited a stateless, prompt-based bot over MongoDB.'],
+          ['line-output', '  Rebuilt into a full agentic TypeScript system with'],
+          ['line-output', '  Text-to-Mongo query gen + contextual memory layer.'],
+          ['line-output green', '  Latency: 80s -> 40-50s &nbsp; (40% cut)'],
           ['line-output empty', ''],
-          ['line-output green', '  Latency: 80s -> 40-50s (40% cut) &nbsp; Throughput: 33x'],
-          ['line-output green', '  Scale: 100K+ inputs/day in production'],
+          ['line-output dim', '  [2] VoC engine'],
+          ['line-output', '  LLM pipeline turning unstructured customer feedback'],
+          ['line-output', '  into decision-ready product insights.'],
+          ['line-output green', '  Throughput: 33x &nbsp;&nbsp; Scale: 100K+ inputs/day in production'],
           ['line-output empty', ''],
           ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sept 2024 - Nov 2025'],
           ['line-output empty', ''],
@@ -854,6 +857,11 @@
               step.after();
             }
             addPrompt('', true);
+            // Re-check scroll position after a step fully renders.
+            // Safe now that scroll restoration is disabled (no on-load cascade).
+            // Handles the case where the user scrolled past the next threshold
+            // while the current step was still typing.
+            setTimeout(checkProgress, 200);
           });
         });
       }
