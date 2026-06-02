@@ -24,16 +24,16 @@
 
     html {
       background: var(--bg);
-      /* hide scrollbar while keeping scroll behaviour */
-      scrollbar-width: none;
+      overflow: hidden;
+      height: 100%;
     }
-    html::-webkit-scrollbar { display: none; }
 
     body {
       font-family: var(--mono);
       background: transparent;
       color: var(--white);
-      overflow-x: hidden;
+      overflow: hidden;
+      height: 100%;
     }
 
     /* ── Background canvas ── */
@@ -44,14 +44,7 @@
       pointer-events: none;
     }
 
-    /* ── Scroll spacer — makes the page tall so native scroll works ── */
-    #scroll-spacer {
-      /* height overwritten by JS once we know step count */
-      height: 900vh;
-      pointer-events: none;
-    }
-
-    /* ── Terminal wrapper (fixed, full-viewport) ── */
+/* ── Terminal wrapper (fixed, full-viewport) ── */
     #terminal-wrapper {
       position: fixed;
       inset: 0;
@@ -337,9 +330,6 @@
   <!-- Background agent-trace animation -->
   <canvas id="trace-canvas"></canvas>
 
-  <!-- Makes the page tall so the browser's native scroll mechanism works -->
-  <div id="scroll-spacer"></div>
-
   <!-- Fixed terminal — always covers the viewport -->
   <div id="terminal-wrapper">
 
@@ -554,17 +544,55 @@
        TERMINAL SESSION
     ════════════════════════════════════════════════════════ */
     (function () {
-      // Prevent browser from restoring a previous scroll position on reload,
-      // which would make checkProgress fire with non-zero progress and cascade all steps.
-      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-      window.scrollTo(0, 0);
-
-      const SCROLL_HEIGHT_VH = 900;
-      document.getElementById('scroll-spacer').style.height = SCROLL_HEIGHT_VH + 'vh';
-
       const linesEl    = document.getElementById('term-lines');
       const outputEl   = document.getElementById('term-output');
       const progressEl = document.getElementById('term-progress');
+
+      /* ── Wheel-driven progress ── */
+      const TOTAL_DELTA = 4000; // total wheel-pixel units for one full session
+      let rawProgress    = 0;   // 0–1, driven by wheel/touch/keys
+      let smoothProgress = 0;   // lerped toward rawProgress for the bar
+
+      function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+      let hintHidden = false;
+      function hideHint() {
+        if (hintHidden) return;
+        hintHidden = true;
+        const el = document.getElementById('scroll-hint');
+        if (el) el.style.opacity = '0';
+      }
+
+      // Wheel (desktop + trackpad)
+      window.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        hideHint();
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) dy *= 16;              // lines -> px
+        if (e.deltaMode === 2) dy *= window.innerHeight; // pages -> px
+        rawProgress = clamp01(rawProgress + dy / TOTAL_DELTA);
+      }, { passive: false });
+
+      // Touch (mobile)
+      let _ty = 0;
+      window.addEventListener('touchstart', function (e) { _ty = e.touches[0].clientY; }, { passive: true });
+      window.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        hideHint();
+        const dy = _ty - e.touches[0].clientY;
+        _ty = e.touches[0].clientY;
+        rawProgress = clamp01(rawProgress + dy / (TOTAL_DELTA * 0.35));
+      }, { passive: false });
+
+      // Keyboard
+      window.addEventListener('keydown', function (e) {
+        const STEP = 1 / 9;
+        if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+          e.preventDefault(); rawProgress = clamp01(rawProgress + STEP);
+        } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          e.preventDefault(); rawProgress = clamp01(rawProgress - STEP);
+        }
+      });
 
       /* ── DOM helpers ── */
       function scrollBottom() {
@@ -849,6 +877,7 @@
         const cmdSpan = prompt.querySelector('.prompt-cmd');
 
         typeInto(cmdSpan, step.cmd, function () {
+          state.typing = true; // hold gate while output renders
           const output = STEP_OUTPUT[i] || [];
           renderLines(output, function () {
             if (step.after === showLeapsWindow) {
@@ -857,11 +886,7 @@
               step.after();
             }
             addPrompt('', true);
-            // Re-check scroll position after a step fully renders.
-            // Safe now that scroll restoration is disabled (no on-load cascade).
-            // Handles the case where the user scrolled past the next threshold
-            // while the current step was still typing.
-            setTimeout(checkProgress, 200);
+            state.typing = false; // release — tick loop picks up naturally
           });
         });
       }
@@ -891,19 +916,19 @@
               state.looping     = false;
               hideLeapsWindow();
 
-              // Jump to top
-              window.scrollTo(0, 0);
+              // Reset progress
+              rawProgress    = 0;
+              smoothProgress = 0;
 
               // Re-boot
               addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
               addLine('line-output empty', '');
               addPrompt('', true);
 
-              // Fade back in after a double rAF so the opacity:0 is painted first
+              // Fade back in
               requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
                   outputEl.style.opacity = '1';
-                  onScroll();
                 });
               });
             }, 500);
@@ -911,51 +936,35 @@
         });
       }
 
-      /* ── Progress check: activates next pending step or triggers loop.
-         Called both from scroll events and after each step completes,
-         so fast-scrolling auto-chains through remaining steps. ── */
+      /* ── Progress check — called every rAF frame ── */
       function checkProgress() {
         if (state.looping || state.typing) return;
 
-        const maxY     = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = maxY > 0 ? window.scrollY / maxY : 0;
-
-        if (state.activated === STEPS.length - 1 && progress >= 0.96) {
+        if (state.activated === STEPS.length - 1 && rawProgress >= 0.96) {
           triggerLoop();
           return;
         }
 
         const next = state.activated + 1;
-        if (next < STEPS.length && progress >= STEPS[next].startAt) {
+        if (next < STEPS.length && rawProgress >= STEPS[next].startAt) {
           activateStep(next);
         }
       }
 
-      /* ── Scroll engine ── */
-      function onScroll() {
-        if (state.looping) return;
-        const maxY     = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = maxY > 0 ? window.scrollY / maxY : 0;
-        progressEl.style.width = (progress * 100).toFixed(2) + '%';
+      /* ── rAF tick: smooth progress bar + step gating ── */
+      function tick() {
+        smoothProgress += (rawProgress - smoothProgress) * 0.10;
+        progressEl.style.width = (smoothProgress * 100).toFixed(2) + '%';
         checkProgress();
+        requestAnimationFrame(tick);
       }
-
-      window.addEventListener('scroll', onScroll, { passive: true });
 
       /* ── Boot ── */
       function boot() {
         addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
         addLine('line-output empty', '');
         addPrompt('', true);
-
-        // Hide scroll hint on first scroll
-        window.addEventListener('scroll', function hideHint() {
-          const hint = document.getElementById('scroll-hint');
-          if (hint) hint.style.opacity = '0';
-          window.removeEventListener('scroll', hideHint);
-        }, { passive: true, once: true });
-
-        onScroll();
+        requestAnimationFrame(tick);
       }
 
       boot();
