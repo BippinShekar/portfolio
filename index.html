@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bippin Shekar Goud - AI Engineer</title>
+  <title>Bippin Shekar Goud</title>
+  <meta name="description" content="Founder & Lead Engineer at Leaps. Building autonomous AI systems — T2SQL engines, agentic pipelines, multi-agent job execution." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='5' fill='%230d0d0d'/><rect x='6' y='4' width='3' height='24' fill='%23d4a017' rx='1'/><text x='7' y='17' font-family='monospace' font-weight='bold' font-size='14' fill='%23d4a017'>&gt;</text><text x='7' y='28' font-family='monospace' font-weight='bold' font-size='15' fill='%23d4a017'>&gt;</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -199,16 +200,6 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* ── Progress bar (thin line at bottom of chrome) ── */
-    .term-progress {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 1px;
-      background: rgba(212, 160, 23, 0.35);
-      width: 0%;
-      transition: width 0.15s linear;
-    }
 
     /* ════════════════════════════════════
        LEAPS SUB-WINDOW
@@ -368,7 +359,6 @@
           <div class="term-dot dot-green"></div>
         </div>
         <div class="term-title">bippin@portfolio - zsh</div>
-        <div class="term-progress" id="term-progress"></div>
       </div>
 
       <div class="term-body">
@@ -547,7 +537,7 @@
     (function () {
       const linesEl    = document.getElementById('term-lines');
       const outputEl   = document.getElementById('term-output');
-      const progressEl = document.getElementById('term-progress');
+      const progressEl = { style: {} }; // progress bar removed
 
       /* ── Wheel-driven progress ── */
       const TOTAL_DELTA = 4000; // total wheel-pixel units for one full session
