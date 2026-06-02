@@ -634,7 +634,8 @@
       /* ── Leaps sub-window helpers ── */
       const leapsWin    = document.getElementById('leaps-window');
       const leapsIframe = document.getElementById('leaps-iframe');
-      let   leapsShowTimer = null;
+      let   leapsShowTimer  = null;
+      let   leapsHoldTimer  = null; // keeps holdNext true for min display duration
 
       function scaleLeapsIframe() {
         const winW = leapsWin.offsetWidth;
@@ -653,13 +654,18 @@
         leapsShowTimer = null;
         leapsWin.classList.add('visible');
         requestAnimationFrame(scaleLeapsIframe);
+        // Hold checkProgress from advancing to step 5 for at least 1.6 s
+        // so the window has guaranteed screen time before being dismissed.
+        leapsHoldTimer = setTimeout(function () {
+          leapsHoldTimer = null;
+          state.holdNext = false;
+        }, 1600);
       }
 
       function hideLeapsWindow() {
-        if (leapsShowTimer !== null) {
-          clearTimeout(leapsShowTimer);
-          leapsShowTimer = null;
-        }
+        if (leapsShowTimer !== null) { clearTimeout(leapsShowTimer); leapsShowTimer = null; }
+        if (leapsHoldTimer  !== null) { clearTimeout(leapsHoldTimer);  leapsHoldTimer  = null; }
+        state.holdNext = false;
         leapsWin.classList.remove('visible');
       }
 
@@ -828,6 +834,7 @@
         typing:    false,
         cursorEl:  null,
         looping:   false,
+        holdNext:  false, // true while leaps window is guaranteed display time
       };
 
       /* ── Typewriter: types text char by char into el, then calls done() ── */
@@ -881,7 +888,8 @@
           const output = STEP_OUTPUT[i] || [];
           renderLines(output, function () {
             if (step.after === showLeapsWindow) {
-              leapsShowTimer = setTimeout(showLeapsWindow, 220);
+              state.holdNext = true; // block next step BEFORE releasing typing gate
+              leapsShowTimer = setTimeout(showLeapsWindow, 180);
             } else if (step.after) {
               step.after();
             }
@@ -938,7 +946,7 @@
 
       /* ── Progress check — called every rAF frame ── */
       function checkProgress() {
-        if (state.looping || state.typing) return;
+        if (state.looping || state.typing || state.holdNext) return;
 
         if (state.activated === STEPS.length - 1 && rawProgress >= 0.96) {
           triggerLoop();
