@@ -289,7 +289,7 @@
     .leaps-win-open:hover { color: #e8e8e8; border-color: rgba(255,255,255,0.2); }
 
     .leaps-win-body {
-      flex: 1;
+      flex: 0 0 auto;
       position: relative;
       overflow: hidden;
       background: #fff;
@@ -611,10 +611,14 @@
       function scaleLeapsIframe() {
         const winW = leapsWin.offsetWidth;
         if (winW <= 0) { requestAnimationFrame(scaleLeapsIframe); return; }
-        const scale  = winW / 1280;
-        const bodyEl = leapsWin.querySelector('.leaps-win-body');
+        const scale    = winW / 1280;
+        const bodyH    = Math.round(620 * scale);
+        const chromeEl = leapsWin.querySelector('.leaps-win-chrome');
+        const chromeH  = chromeEl ? chromeEl.offsetHeight : 44;
+        const bodyEl   = leapsWin.querySelector('.leaps-win-body');
         leapsIframe.style.transform = 'scale(' + scale.toFixed(4) + ')';
-        bodyEl.style.height = Math.round(620 * scale) + 'px';
+        bodyEl.style.height   = bodyH + 'px';
+        leapsWin.style.height = (chromeH + bodyH) + 'px';
       }
 
       function showLeapsWindow() {
