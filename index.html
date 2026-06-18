@@ -589,15 +589,23 @@
       const outputEl   = document.getElementById('term-output');
       const progressEl = document.getElementById('term-progress');
 
-      /* ── Discrete scroll stepping ──
-         One scroll gesture / key press = exactly one command, forward or
-         back. Input is ignored entirely while a command is mid-typing or
-         mid-render (busy=true), so a long trackpad fling can't cascade
-         through several commands at once. */
-      const WHEEL_STEP = 110;   // px of accumulated wheel delta per step
-      const TOUCH_STEP = 55;    // px of accumulated touch delta per step
+      /* ── Scroll stepping ──
+         Within a command's rendered output, the wheel/touch/keys scroll
+         freely (native scrolling) so long outputs like experience.md can
+         be read normally. Only once you're already at the top or bottom
+         edge does further input in that direction drive the discrete
+         engine — typing the next command, or rewinding past the current
+         one. Input to the discrete engine is ignored while a command is
+         mid-typing or mid-render (busy=true), so a long fling can't
+         cascade through several commands at once. */
+      const EDGE_EPS    = 2;     // px tolerance for "at top"/"at bottom"
+      const WHEEL_STEP   = 110;  // px of accumulated wheel delta per step
+      const TOUCH_STEP   = 55;   // px of accumulated touch delta per step
       let wheelAccum = 0;
       let touchAccum = 0;
+
+      function atTop()    { return outputEl.scrollTop <= EDGE_EPS; }
+      function atBottom()  { return outputEl.scrollTop + outputEl.clientHeight >= outputEl.scrollHeight - EDGE_EPS; }
 
       let hintHidden = false;
       function hideHint() {
@@ -609,12 +617,17 @@
 
       // Wheel (desktop + trackpad)
       window.addEventListener('wheel', function (e) {
-        e.preventDefault();
-        hideHint();
-        if (state.busy) return; // drop input while a command is in flight
         let dy = e.deltaY;
         if (e.deltaMode === 1) dy *= 16;                 // lines -> px
         if (e.deltaMode === 2) dy *= window.innerHeight;  // pages -> px
+
+        if ((dy > 0 && !atBottom()) || (dy < 0 && !atTop())) {
+          return; // let the browser scroll #term-output natively
+        }
+
+        e.preventDefault();
+        hideHint();
+        if (state.busy) return; // drop input while a command is in flight
         wheelAccum += dy;
         if (wheelAccum >= WHEEL_STEP)       { wheelAccum = 0; goForward(); }
         else if (wheelAccum <= -WHEEL_STEP) { wheelAccum = 0; goBack(); }
@@ -624,9 +637,15 @@
       let _ty = 0;
       window.addEventListener('touchstart', function (e) { _ty = e.touches[0].clientY; }, { passive: true });
       window.addEventListener('touchmove', function (e) {
+        const dy = _ty - e.touches[0].clientY;
+
+        if ((dy > 0 && !atBottom()) || (dy < 0 && !atTop())) {
+          _ty = e.touches[0].clientY;
+          return; // let the browser scroll #term-output natively
+        }
+
         e.preventDefault();
         hideHint();
-        const dy = _ty - e.touches[0].clientY;
         _ty = e.touches[0].clientY;
         if (state.busy) return;
         touchAccum += dy;
@@ -637,8 +656,10 @@
       // Keyboard
       window.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+          if (!atBottom()) { outputEl.scrollTop += 80; hideHint(); return; }
           e.preventDefault(); hideHint(); if (!state.busy) goForward();
         } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          if (!atTop()) { outputEl.scrollTop -= 80; hideHint(); return; }
           e.preventDefault(); hideHint(); if (!state.busy) goBack();
         }
       });
@@ -1049,7 +1070,10 @@
           state.cursorEl = c;
         }
         scrollBottom();
-        state.busy = false;
+        // goBack has no typing/render animation to pace it like goForward
+        // does, so hold the busy gate briefly — otherwise a continuous
+        // scroll pinned at the top edge fires it dozens of times in a row.
+        setTimeout(function () { state.busy = false; }, 350);
       }
 
       /* ── Infinite loop: fade out, reset, scroll to top, fade in ── */
