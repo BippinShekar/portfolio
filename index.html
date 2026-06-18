@@ -722,6 +722,10 @@
       function showHeuretosWindow() { heuretosSub.show(); }
       function hideHeuretosWindow() { heuretosSub.hide(); }
 
+      // Going back from the experience.md step lands on the Leaps step —
+      // undo both this step's own reveal and the previous step's "before".
+      function undoExperienceStep() { hideAuditorWindow(); showLeapsWindow(); }
+
       // Going back from the Heuretos step lands on the AI Auditor step —
       // undo both this step's own reveal and the previous step's "before".
       function undoHeuretosStep() { hideHeuretosWindow(); showAuditorWindow(); }
@@ -735,12 +739,10 @@
         { cmd: 'whoami' },
         { cmd: 'ls --sections' },
         { cmd: 'cat about.txt' },
-        { cmd: 'cat leaps.md && open leaps.to',           after: showLeapsWindow,    undo: hideLeapsWindow },
-        { cmd: 'cat experience.md',                       before: hideLeapsWindow,   undo: showLeapsWindow },
-        { cmd: 'cat ventures.md && cat theaiauditor.md && open theaiauditor.in',
-                                                            after: showAuditorWindow, undo: hideAuditorWindow },
-        { cmd: 'cat heuretos.md && open heuretos.com',     before: hideAuditorWindow, after: showHeuretosWindow, undo: undoHeuretosStep },
-        { cmd: 'cat projects.md',                         before: hideHeuretosWindow, undo: showHeuretosWindow },
+        { cmd: 'cat leaps.md && open leaps.to',            after: showLeapsWindow,    undo: hideLeapsWindow },
+        { cmd: 'cat experience.md && open theaiauditor.in', before: hideLeapsWindow,   after: showAuditorWindow, undo: undoExperienceStep },
+        { cmd: 'cat heuretos.md && open heuretos.com',      before: hideAuditorWindow, after: showHeuretosWindow, undo: undoHeuretosStep },
+        { cmd: 'cat projects.md',                          before: hideHeuretosWindow, undo: showHeuretosWindow },
         { cmd: 'cat stack.txt' },
         { cmd: 'contact --all' },
       ];
@@ -753,7 +755,7 @@
           ['line-output bright mt', 'D Bippin Shekar Goud'],
           ['line-output dim',       'Founder &amp; Lead Engineer, Leaps'],
           ['line-output empty',     ''],
-          ['line-output', 'Three founding engineer roles. Pre-product or very early at each.'],
+          ['line-output', 'Two founding engineer roles, one independent AI consultancy.'],
           ['line-output', 'Built T2SQL engines, agentic VoC pipelines, and an autonomous'],
           ['line-output', 'job application system from scratch.'],
           ['line-output empty', ''],
@@ -763,7 +765,7 @@
 
         /* 1: ls --sections */
         [
-          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md &nbsp;&nbsp;&nbsp; ventures.md'],
+          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md &nbsp;&nbsp;&nbsp; heuretos.md'],
           ['line-output',    'projects.md &nbsp; stack.txt &nbsp;&nbsp;&nbsp; contact'],
           ['line-output empty', ''],
         ],
@@ -780,24 +782,23 @@
           ['line-output green', '  100K+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; feedback inputs/day in production'],
           ['line-output green', '  80% -> 98% &nbsp;&nbsp;&nbsp; SQL generation accuracy (QLoRA + guardrails)'],
           ['line-output green', '  55% -> 85%+ &nbsp;&nbsp; SQL execution success'],
-          ['line-output green', '  0 -> 4.3% &nbsp;&nbsp;&nbsp;&nbsp; interview conversion, Leaps week-1 alpha'],
+          ['line-output green', '  400+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; applications filed in Leaps closed alpha'],
           ['line-output empty', ''],
         ],
 
         /* 3: cat leaps.md */
         [
           ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">leaps.to ↗</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; Live · Alpha &nbsp;&nbsp; Since Dec 2025'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Closed Alpha &nbsp;&nbsp; Since Dec 2025'],
           ['line-output dim', 'Role &nbsp;&nbsp;&nbsp;&nbsp; Founder &amp; Lead Engineer'],
           ['line-output empty', ''],
           ['line-output', 'Job hunting is mostly noise. Leaps replaces volume with fit:'],
           ['line-output', 'score your resume against listings, surface the gaps, then'],
           ['line-output', 'autonomously apply to roles where you actually match.'],
           ['line-output empty', ''],
-          ['line-output bright', 'Week-1 alpha'],
-          ['line-output green',  '  47 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; applications filed'],
-          ['line-output green',  '   2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; interviews &nbsp;(vs 0 from 100+ sent manually by co-founder)'],
-          ['line-output green',  '  0 -> 4.3% &nbsp;&nbsp;&nbsp; conversion rate'],
+          ['line-output bright', 'Closed alpha'],
+          ['line-output green',  '  400+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; job applications filed end-to-end, LinkedIn + Ashby'],
+          ['line-output dim',    '  Waitlist-based access now, ahead of a funded beta rollout.'],
           ['line-output empty', ''],
           ['line-output dim', 'resume parser -> fit scorer -> gap analyst -> apply agents'],
           ['line-output dim', 'LinkedIn (multi-step, turn-based) + Ashby (single-form,'],
@@ -807,24 +808,29 @@
           ['line-output empty', ''],
         ],
 
-        /* 4: cat experience.md */
+        /* 4: cat experience.md && open theaiauditor.in */
         [
-          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer(Advisory) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Jan 2026'],
+          ['line-output bright mt', 'The AI Auditor &nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Independent AI Consultant &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Present'],
+          ['line-output dim', '  <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">theaiauditor.in ↗</a>'],
           ['line-output empty', ''],
-          ['line-output dim', '  [1] Analytics bot'],
-          ['line-output', '  Inherited a stateless, prompt-based bot over MongoDB.'],
-          ['line-output', '  Rebuilt into a full agentic TypeScript system with'],
-          ['line-output', '  Text-to-Mongo query gen + contextual memory layer.'],
+          ['line-output', '  Auditing and rebuilding AI systems for early-stage startups —'],
+          ['line-output', '  root-causing failures in production LLM pipelines, retrieval'],
+          ['line-output', '  systems, and agentic architectures.'],
+          ['line-output empty', ''],
+          ['line-output dim', '  [client] Pulsegen.io &mdash; analytics bot'],
+          ['line-output', '  Rebuilt a stateless, prompt-based bot into a full agentic'],
+          ['line-output', '  TypeScript system over unstructured MongoDB. Text-to-Mongo'],
+          ['line-output', '  query gen + contextual memory layer.'],
           ['line-output green', '  Latency: 80s -> 40-50s &nbsp; (40% cut)'],
           ['line-output empty', ''],
-          ['line-output dim', '  [2] VoC engine'],
-          ['line-output', '  LLM pipeline turning unstructured customer feedback'],
+          ['line-output dim', '  [client] Pulsegen.io &mdash; VoC engine'],
+          ['line-output', '  LLM-driven engine turning unstructured customer feedback'],
           ['line-output', '  into decision-ready product insights.'],
           ['line-output green', '  Throughput: 33x &nbsp;&nbsp; Scale: 100K+ inputs/day in production'],
           ['line-output empty', ''],
           ['line-output bright', '8bit.ai &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sept 2024 - Nov 2025'],
           ['line-output empty', ''],
-          ['line-output', '  T2SQL across PostgreSQL, MySQL, and Iceberg (200+ tables).'],
+          ['line-output', '  T2SQL across PostgreSQL, MySQL, and Iceberg (250+ tables).'],
           ['line-output', '  Metadata jargon layer mapped business terms to actual columns'],
           ['line-output', '  so users never needed to know data team naming conventions.'],
           ['line-output empty', ''],
@@ -832,30 +838,20 @@
           ['line-output green', '  SQL gen: 80% -> 98% &nbsp;&nbsp; Execution: 55% -> 85%+'],
           ['line-output', '  Pre/post guardrails + correction layers close the gap.'],
           ['line-output empty', ''],
-          ['line-output', '  Conversational routing: T2SQL, RAG, workflow, web research.'],
-          ['line-output', '  Redis-backed hierarchical memory, not rolling context windows.'],
+          ['line-output', '  Led a generative AI insights platform — interactive dashboards'],
+          ['line-output', '  for execs to probe trends and metrics instantly.'],
+          ['line-output green', '  Drove $500K+ lead pipeline, improved customer retention'],
+          ['line-output empty', ''],
+          ['line-output', '  Multi-modal orchestration: T2SQL, RAG, workflow, web research.'],
+          ['line-output', '  Redis-backed memory retrieval replaced full history injection.'],
+          ['line-output green', '  Conversation depth: 4 -> 20+ turns before context exhaustion'],
           ['line-output', '  LangChain -> LangGraph -> direct SDK (removed all black boxes).'],
-          ['line-output', '  Go backend + self-hosted Kubernetes throughout.'],
-          ['line-output empty', ''],
-        ],
-
-        /* 5: cat ventures.md && cat theaiauditor.md && open theaiauditor.in */
-        [
-          ['line-output bright mt', '# Ventures &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; things I built outside the day job'],
-          ['line-output empty', ''],
-          ['line-output bright', 'The AI Auditor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">theaiauditor.in ↗</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; Live'],
-          ['line-output empty', ''],
-          ['line-output', '  Independent AI systems audit for Indian startups. We find what\'s'],
-          ['line-output', '  slowing your AI stack down and tell you exactly what to fix —'],
-          ['line-output', '  delivered in 5 days.'],
-          ['line-output dim', '  "Your AI stack is underperforming. We\'ll prove it."'],
           ['line-output empty', ''],
           ['line-output mt', 'Opening <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://theaiauditor.in</a> ...'],
           ['line-output empty', ''],
         ],
 
-        /* 6: cat heuretos.md && open heuretos.com */
+        /* 5: cat heuretos.md && open heuretos.com */
         [
           ['line-output bright mt', 'Heuretos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">heuretos.com ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; Shut down'],
@@ -874,7 +870,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 7: cat projects.md */
+        /* 6: cat projects.md */
         [
           ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source'],
@@ -903,7 +899,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 8: cat stack.txt */
+        /* 7: cat stack.txt */
         [
           ['line-output dim mt', '# what I shipped with — and what I learned'],
           ['line-output empty', ''],
@@ -923,7 +919,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 9: contact --all */
+        /* 8: contact --all */
         [
           ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
           ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
