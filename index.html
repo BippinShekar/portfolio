@@ -236,7 +236,7 @@
     /* ════════════════════════════════════
        LEAPS SUB-WINDOW
     ════════════════════════════════════ */
-    #leaps-window {
+    .sub-window {
       position: absolute;
       top: calc(2vh + 3.2rem);
       right: calc(2.5vw + 0.4rem);
@@ -258,7 +258,7 @@
       pointer-events: none;
     }
 
-    #leaps-window.visible {
+    .sub-window.visible {
       opacity: 1;
       transform: scale(1) translateX(0);
       pointer-events: auto;
@@ -312,7 +312,7 @@
       background: #fff;
     }
 
-    #leaps-iframe {
+    .leaps-win-body iframe {
       position: absolute;
       top: 0;
       left: 0;
@@ -347,6 +347,39 @@
       transition: opacity 0.2s;
     }
     .leaps-win-overlay:hover .leaps-win-overlay-label { opacity: 1; }
+
+    /* ── The AI Auditor preview card (no iframe — site blocks framing) ── */
+    .auditor-card {
+      position: relative;
+      padding: 1.5rem 1.7rem 4.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      background: #0c0c0c;
+    }
+    .auditor-card-title {
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+    .auditor-card-tagline {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--gold);
+    }
+    .auditor-card-desc {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      line-height: 1.6;
+      color: var(--mid);
+    }
+    .auditor-card .leaps-win-overlay {
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 0 1.7rem 1.3rem;
+    }
+    .auditor-card .leaps-win-overlay-label { opacity: 1; }
   </style>
 </head>
 <body>
@@ -358,7 +391,7 @@
   <div id="terminal-wrapper">
 
     <!-- Leaps sub-window (floats above the terminal body) -->
-    <div id="leaps-window">
+    <div class="sub-window" id="leaps-window">
       <div class="leaps-win-chrome">
         <div class="term-dots">
           <div class="term-dot dot-red"></div>
@@ -378,6 +411,27 @@
         ></iframe>
         <a href="https://leaps.to" target="_blank" rel="noopener" class="leaps-win-overlay">
           <span class="leaps-win-overlay-label">Open Leaps ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- The AI Auditor sub-window (floats above the terminal body) -->
+    <div class="sub-window" id="auditor-window">
+      <div class="leaps-win-chrome">
+        <div class="term-dots">
+          <div class="term-dot dot-red"></div>
+          <div class="term-dot dot-yellow"></div>
+          <div class="term-dot dot-green"></div>
+        </div>
+        <div class="leaps-win-url">https://theaiauditor.in</div>
+        <a href="https://theaiauditor.in" target="_blank" rel="noopener" class="leaps-win-open">Open ↗</a>
+      </div>
+      <div class="leaps-win-body auditor-card">
+        <div class="auditor-card-title">The AI Auditor</div>
+        <div class="auditor-card-tagline">Your AI stack is underperforming. We'll prove it.</div>
+        <div class="auditor-card-desc">Independent AI systems audit for Indian startups. We find what's slowing your AI down and tell you exactly what to fix — delivered in 5 days.</div>
+        <a href="https://theaiauditor.in" target="_blank" rel="noopener" class="leaps-win-overlay">
+          <span class="leaps-win-overlay-label">Open The AI Auditor ↗</span>
         </a>
       </div>
     </div>
@@ -573,12 +627,15 @@
       const outputEl   = document.getElementById('term-output');
       const progressEl = document.getElementById('term-progress');
 
-      /* ── Wheel-driven progress ── */
-      const TOTAL_DELTA = 4000; // total wheel-pixel units for one full session
-      let rawProgress    = 0;   // 0–1, driven by wheel/touch/keys
-      let smoothProgress = 0;   // lerped toward rawProgress for the bar
-
-      function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+      /* ── Discrete scroll stepping ──
+         One scroll gesture / key press = exactly one command, forward or
+         back. Input is ignored entirely while a command is mid-typing or
+         mid-render (busy=true), so a long trackpad fling can't cascade
+         through several commands at once. */
+      const WHEEL_STEP = 110;   // px of accumulated wheel delta per step
+      const TOUCH_STEP = 55;    // px of accumulated touch delta per step
+      let wheelAccum = 0;
+      let touchAccum = 0;
 
       let hintHidden = false;
       function hideHint() {
@@ -592,10 +649,13 @@
       window.addEventListener('wheel', function (e) {
         e.preventDefault();
         hideHint();
+        if (state.busy) return; // drop input while a command is in flight
         let dy = e.deltaY;
-        if (e.deltaMode === 1) dy *= 16;              // lines -> px
-        if (e.deltaMode === 2) dy *= window.innerHeight; // pages -> px
-        rawProgress = clamp01(rawProgress + dy / TOTAL_DELTA);
+        if (e.deltaMode === 1) dy *= 16;                 // lines -> px
+        if (e.deltaMode === 2) dy *= window.innerHeight;  // pages -> px
+        wheelAccum += dy;
+        if (wheelAccum >= WHEEL_STEP)       { wheelAccum = 0; goForward(); }
+        else if (wheelAccum <= -WHEEL_STEP) { wheelAccum = 0; goBack(); }
       }, { passive: false });
 
       // Touch (mobile)
@@ -606,16 +666,18 @@
         hideHint();
         const dy = _ty - e.touches[0].clientY;
         _ty = e.touches[0].clientY;
-        rawProgress = clamp01(rawProgress + dy / (TOTAL_DELTA * 0.35));
+        if (state.busy) return;
+        touchAccum += dy;
+        if (touchAccum >= TOUCH_STEP)       { touchAccum = 0; goForward(); }
+        else if (touchAccum <= -TOUCH_STEP) { touchAccum = 0; goBack(); }
       }, { passive: false });
 
       // Keyboard
       window.addEventListener('keydown', function (e) {
-        const STEP = 1 / 9;
         if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
-          e.preventDefault(); rawProgress = clamp01(rawProgress + STEP);
+          e.preventDefault(); hideHint(); if (!state.busy) goForward();
         } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-          e.preventDefault(); rawProgress = clamp01(rawProgress - STEP);
+          e.preventDefault(); hideHint(); if (!state.busy) goBack();
         }
       });
 
@@ -656,57 +718,65 @@
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       }
 
-      /* ── Leaps sub-window helpers ── */
-      const leapsWin    = document.getElementById('leaps-window');
-      const leapsIframe = document.getElementById('leaps-iframe');
-      let   leapsShowTimer  = null;
-      let   leapsHoldTimer  = null; // keeps holdNext true for min display duration
+      /* ── Sub-window helpers (Leaps / The AI Auditor live previews) ── */
+      function createSubWindow(winId, iframeId) {
+        const win    = document.getElementById(winId);
+        const iframe = document.getElementById(iframeId);
 
-      function scaleLeapsIframe() {
-        const winW = leapsWin.offsetWidth;
-        if (winW <= 0) { requestAnimationFrame(scaleLeapsIframe); return; }
-        const scale    = winW / 1280;
-        const bodyH    = Math.round(620 * scale);
-        const chromeEl = leapsWin.querySelector('.leaps-win-chrome');
-        const chromeH  = chromeEl ? chromeEl.offsetHeight : 44;
-        const bodyEl   = leapsWin.querySelector('.leaps-win-body');
-        leapsIframe.style.transform = 'scale(' + scale.toFixed(4) + ')';
-        bodyEl.style.height   = bodyH + 'px';
-        leapsWin.style.height = (chromeH + bodyH) + 'px';
+        function scale() {
+          const winW = win.offsetWidth;
+          if (winW <= 0) { requestAnimationFrame(scale); return; }
+          const s        = winW / 1280;
+          const bodyH    = Math.round(620 * s);
+          const chromeEl = win.querySelector('.leaps-win-chrome');
+          const chromeH  = chromeEl ? chromeEl.offsetHeight : 44;
+          const bodyEl   = win.querySelector('.leaps-win-body');
+          iframe.style.transform = 'scale(' + s.toFixed(4) + ')';
+          bodyEl.style.height = bodyH + 'px';
+          win.style.height    = (chromeH + bodyH) + 'px';
+        }
+
+        function show() {
+          win.classList.add('visible');
+          requestAnimationFrame(scale);
+        }
+
+        function hide() {
+          win.classList.remove('visible');
+        }
+
+        window.addEventListener('resize', scale);
+        return { show, hide };
       }
 
-      function showLeapsWindow() {
-        leapsShowTimer = null;
-        leapsWin.classList.add('visible');
-        requestAnimationFrame(scaleLeapsIframe);
-        // Hold checkProgress from advancing to step 5 for at least 1.6 s
-        // so the window has guaranteed screen time before being dismissed.
-        leapsHoldTimer = setTimeout(function () {
-          leapsHoldTimer = null;
-          state.holdNext = false;
-        }, 1600);
-      }
+      const leapsSub = createSubWindow('leaps-window', 'leaps-iframe');
 
-      function hideLeapsWindow() {
-        if (leapsShowTimer !== null) { clearTimeout(leapsShowTimer); leapsShowTimer = null; }
-        if (leapsHoldTimer  !== null) { clearTimeout(leapsHoldTimer);  leapsHoldTimer  = null; }
-        state.holdNext = false;
-        leapsWin.classList.remove('visible');
-      }
+      function showLeapsWindow() { leapsSub.show(); }
+      function hideLeapsWindow() { leapsSub.hide(); }
 
-      window.addEventListener('resize', scaleLeapsIframe);
+      // The AI Auditor sends X-Frame-Options: DENY, so it can't be iframed
+      // like Leaps — this window is a static preview card instead, sized
+      // by CSS rather than scaled against an iframe.
+      const auditorWin = document.getElementById('auditor-window');
+      function showAuditorWindow() { auditorWin.classList.add('visible'); }
+      function hideAuditorWindow() { auditorWin.classList.remove('visible'); }
 
-      /* ── Session steps ── */
+      /* ── Session steps ──
+         Each step is exactly one scroll/key gesture forward or back.
+         before/after fire going forward; undo reverses after's effect
+         when the step is removed by scrolling back past it. */
       const STEPS = [
-        { cmd: 'whoami',            startAt: 0.00 },
-        { cmd: 'ls --sections',     startAt: 0.11 },
-        { cmd: 'cat about.txt',     startAt: 0.22 },
-        { cmd: 'cat leaps.md',      startAt: 0.35 },
-        { cmd: 'open leaps.to',     startAt: 0.47, after:  showLeapsWindow },
-        { cmd: 'cat experience.md', startAt: 0.57, before: hideLeapsWindow },
-        { cmd: 'cat projects.md',   startAt: 0.70 },
-        { cmd: 'cat stack.txt',     startAt: 0.80 },
-        { cmd: 'contact --all',     startAt: 0.90 },
+        { cmd: 'whoami' },
+        { cmd: 'ls --sections' },
+        { cmd: 'cat about.txt' },
+        { cmd: 'cat leaps.md' },
+        { cmd: 'open leaps.to',         after: showLeapsWindow,   undo: hideLeapsWindow },
+        { cmd: 'cat experience.md',     before: hideLeapsWindow,  undo: showLeapsWindow },
+        { cmd: 'cat ventures.md' },
+        { cmd: 'open theaiauditor.in',  after: showAuditorWindow, undo: hideAuditorWindow },
+        { cmd: 'cat projects.md',       before: hideAuditorWindow, undo: showAuditorWindow },
+        { cmd: 'cat stack.txt' },
+        { cmd: 'contact --all' },
       ];
 
       /* ── Output data: [className, innerHTML] per step ── */
@@ -727,7 +797,7 @@
 
         /* 1: ls --sections */
         [
-          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md'],
+          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md &nbsp;&nbsp;&nbsp; ventures.md'],
           ['line-output',    'projects.md &nbsp; stack.txt &nbsp;&nbsp;&nbsp; contact'],
           ['line-output empty', ''],
         ],
@@ -807,18 +877,69 @@
           ['line-output empty', ''],
         ],
 
-        /* 6: cat projects.md */
+        /* 6: cat ventures.md */
+        [
+          ['line-output bright mt', '# Ventures &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; things I built outside the day job'],
+          ['line-output empty', ''],
+          ['line-output bright', 'The AI Auditor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">theaiauditor.in ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Live'],
+          ['line-output empty', ''],
+          ['line-output', '  Independent AI systems audit for Indian startups. We find what\'s'],
+          ['line-output', '  slowing your AI stack down and tell you exactly what to fix —'],
+          ['line-output', '  delivered in 5 days.'],
+          ['line-output dim', '  "Your AI stack is underperforming. We\'ll prove it."'],
+          ['line-output empty', ''],
+          ['line-output bright', 'Heuretos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">heuretos.com ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Shut down'],
+          ['line-output empty', ''],
+          ['line-output', '  AI research assistant that turned raw sources into structured'],
+          ['line-output', '  insights through dialogue. Shut down after three compounding'],
+          ['line-output', '  concerns wouldn\'t resolve: a customer acquisition model I didn\'t'],
+          ['line-output', '  believe in, base model capabilities improving fast enough to'],
+          ['line-output', '  compress the differentiation window, and genuine uncertainty over'],
+          ['line-output', '  whether the audio interface improved learning or just felt richer.'],
+          ['line-output empty', ''],
+          ['line-output dim', '  Taught me how to architect multi-agent systems under real'],
+          ['line-output dim', '  constraints — and when to walk away from a working product.'],
+          ['line-output empty', ''],
+        ],
+
+        /* 7: open theaiauditor.in */
+        [
+          ['line-output mt', 'Opening <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://theaiauditor.in</a> ...'],
+          ['line-output empty', ''],
+        ],
+
+        /* 8: cat projects.md */
         [
           ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source'],
           ['line-output empty', ''],
-          ['line-output', '  Built out of personal frustration with existing AI dev tooling.'],
-          ['line-output', '  Context management, prompt iteration, eval loops: the things'],
-          ['line-output', '  that matter most are afterthoughts everywhere else.'],
+          ['line-output', '  Autonomous session orchestration for Claude Code. Started as a'],
+          ['line-output', '  personal fix for losing context mid-task — grew into something'],
+          ['line-output', '  bigger: continuity across sessions and across a whole team.'],
+          ['line-output empty', ''],
+          ['line-output bright', '  Session orchestration'],
+          ['line-output', '  Monitors sessions live, auto-checkpoints near the context/quota'],
+          ['line-output', '  limit, and resumes new sessions with full handoff context.'],
+          ['line-output', '  Always-on launchd daemon keeps macOS from sleeping mid-run.'],
+          ['line-output empty', ''],
+          ['line-output bright', '  Project state, shared'],
+          ['line-output', '  Commits structured markdown + JSONL to git — decisions,'],
+          ['line-output', '  implementation notes, architecture, goals — so any teammate'],
+          ['line-output', '  gets full visibility on pull, no standup required.'],
+          ['line-output empty', ''],
+          ['line-output bright', '  Goals + Q&amp;A'],
+          ['line-output', '  Haiku suggests next goals from the last handover and tracks'],
+          ['line-output', '  completion against actual work. An `ask` CLI answers codebase'],
+          ['line-output', '  questions from a snapshot during quota resets.'],
+          ['line-output empty', ''],
+          ['line-output dim', '  Status bar widget (Cursor / VS Code) for live context % and'],
+          ['line-output dim', '  quota countdown. Discord notifications in progress.'],
           ['line-output empty', ''],
         ],
 
-        /* 7: cat stack.txt */
+        /* 9: cat stack.txt */
         [
           ['line-output dim mt', '# what I shipped with — and what I learned'],
           ['line-output empty', ''],
@@ -838,7 +959,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 8: contact --all */
+        /* 10: contact --all */
         [
           ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
           ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
@@ -853,25 +974,26 @@
 
       /* ── State ── */
       const state = {
-        activated: -1,
-        typing:    false,
-        cursorEl:  null,
-        looping:   false,
-        holdNext:  false, // true while leaps window is guaranteed display time
+        current:  -1,    // index of the last fully-activated step, -1 = none yet
+        cursorEl: null,
+        looping:  false,
+        busy:     false, // true whenever a command is typing/rendering/holding — blocks all input
       };
+
+      // DOM child-count snapshot taken just before each step's prompt is
+      // added, so scrolling back can cleanly remove exactly that step.
+      const stepBoundaries = [];
 
       /* ── Typewriter: types text char by char into el, then calls done() ── */
       function typeInto(el, text, done) {
         let i = 0;
-        state.typing = true;
         function tick() {
           el.textContent = text.slice(0, ++i);
           scrollBottom();
           if (i < text.length) {
             setTimeout(tick, 38 + Math.random() * 30);
-          } else {
-            state.typing = false;
-            if (done) done();
+          } else if (done) {
+            done();
           }
         }
         setTimeout(tick, 100);
@@ -889,17 +1011,26 @@
         next();
       }
 
-      /* ── Activate step i ── */
-      function activateStep(i) {
-        if (i !== state.activated + 1) return;
-        state.activated = i;
+      function updateProgress() {
+        progressEl.style.width = (((state.current + 1) / STEPS.length) * 100).toFixed(2) + '%';
+      }
 
-        if (state.cursorEl) {
-          state.cursorEl.remove();
-          state.cursorEl = null;
+      /* ── Advance one step forward ── */
+      function goForward() {
+        if (state.busy || state.looping) return;
+
+        if (state.current === STEPS.length - 1) {
+          triggerLoop();
+          return;
         }
 
+        const i = state.current + 1;
+        state.busy = true;
+
+        if (state.cursorEl) { state.cursorEl.remove(); state.cursorEl = null; }
+
         const step = STEPS[i];
+        stepBoundaries[i] = linesEl.children.length;
 
         if (step.before) step.before();
 
@@ -907,19 +1038,57 @@
         const cmdSpan = prompt.querySelector('.prompt-cmd');
 
         typeInto(cmdSpan, step.cmd, function () {
-          state.typing = true; // hold gate while output renders
           const output = STEP_OUTPUT[i] || [];
           renderLines(output, function () {
-            if (step.after === showLeapsWindow) {
-              state.holdNext = true; // block next step BEFORE releasing typing gate
-              leapsShowTimer = setTimeout(showLeapsWindow, 180);
-            } else if (step.after) {
-              step.after();
+            function finish() {
+              addPrompt('', true);
+              state.current = i;
+              updateProgress();
+              state.busy = false;
             }
-            addPrompt('', true);
-            state.typing = false; // release — tick loop picks up naturally
+            // Live-product reveals (Leaps / The AI Auditor) get a beat to
+            // appear and a guaranteed minimum hold so they don't flash by.
+            if (step.after === showLeapsWindow || step.after === showAuditorWindow) {
+              setTimeout(function () {
+                step.after();
+                setTimeout(finish, 1600);
+              }, 180);
+            } else {
+              if (step.after) step.after();
+              finish();
+            }
           });
         });
+      }
+
+      /* ── Rewind one step: removes exactly the DOM the last step added ── */
+      function goBack() {
+        if (state.busy || state.looping) return;
+        if (state.current < 0) return;
+
+        state.busy = true;
+        const i    = state.current;
+        const step = STEPS[i];
+
+        if (step.undo) step.undo();
+
+        const boundary = stepBoundaries[i];
+        while (linesEl.children.length > boundary) {
+          linesEl.removeChild(linesEl.lastChild);
+        }
+
+        state.current = i - 1;
+        updateProgress();
+
+        const lastPrompt = linesEl.lastElementChild;
+        if (lastPrompt && lastPrompt.classList.contains('line-prompt')) {
+          const c = document.createElement('span');
+          c.className = 'cursor';
+          lastPrompt.appendChild(c);
+          state.cursorEl = c;
+        }
+        scrollBottom();
+        state.busy = false;
       }
 
       /* ── Infinite loop: fade out, reset, scroll to top, fade in ── */
@@ -941,15 +1110,16 @@
             setTimeout(function () {
               // Wipe terminal
               linesEl.innerHTML = '';
-              state.activated   = -1;
-              state.typing      = false;
-              state.cursorEl    = null;
-              state.looping     = false;
+              stepBoundaries.length = 0;
+              state.current  = -1;
+              state.cursorEl = null;
+              state.looping  = false;
+              state.busy     = false;
               hideLeapsWindow();
+              hideAuditorWindow();
 
               // Reset progress
-              rawProgress    = 0;
-              smoothProgress = 0;
+              updateProgress();
 
               // Re-boot
               addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
@@ -962,32 +1132,11 @@
                   outputEl.style.opacity = '1';
                 });
               });
+
+              goForward(); // auto-run whoami again, matching the initial boot
             }, 500);
           }, 900);
         });
-      }
-
-      /* ── Progress check — called every rAF frame ── */
-      function checkProgress() {
-        if (state.looping || state.typing || state.holdNext) return;
-
-        if (state.activated === STEPS.length - 1 && rawProgress >= 0.96) {
-          triggerLoop();
-          return;
-        }
-
-        const next = state.activated + 1;
-        if (next < STEPS.length && rawProgress >= STEPS[next].startAt) {
-          activateStep(next);
-        }
-      }
-
-      /* ── rAF tick: smooth progress bar + step gating ── */
-      function tick() {
-        smoothProgress += (rawProgress - smoothProgress) * 0.10;
-        progressEl.style.width = (smoothProgress * 100).toFixed(2) + '%';
-        checkProgress();
-        requestAnimationFrame(tick);
       }
 
       /* ── Boot ── */
@@ -995,7 +1144,8 @@
         addLine('line-output dim', 'Last login: Mon Jun  2 09:12:04 on ttys001');
         addLine('line-output empty', '');
         addPrompt('', true);
-        requestAnimationFrame(tick);
+        updateProgress();
+        goForward(); // auto-run the first command (whoami) on load
       }
 
       boot();
