@@ -347,39 +347,6 @@
       transition: opacity 0.2s;
     }
     .leaps-win-overlay:hover .leaps-win-overlay-label { opacity: 1; }
-
-    /* ── The AI Auditor preview card (no iframe — site blocks framing) ── */
-    .auditor-card {
-      position: relative;
-      padding: 1.5rem 1.7rem 4.2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.65rem;
-      background: #0c0c0c;
-    }
-    .auditor-card-title {
-      font-family: var(--mono);
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--white);
-    }
-    .auditor-card-tagline {
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      color: var(--gold);
-    }
-    .auditor-card-desc {
-      font-family: var(--mono);
-      font-size: 0.74rem;
-      line-height: 1.6;
-      color: var(--mid);
-    }
-    .auditor-card .leaps-win-overlay {
-      align-items: flex-end;
-      justify-content: flex-start;
-      padding: 0 1.7rem 1.3rem;
-    }
-    .auditor-card .leaps-win-overlay-label { opacity: 1; }
   </style>
 </head>
 <body>
@@ -426,12 +393,41 @@
         <div class="leaps-win-url">https://theaiauditor.in</div>
         <a href="https://theaiauditor.in" target="_blank" rel="noopener" class="leaps-win-open">Open ↗</a>
       </div>
-      <div class="leaps-win-body auditor-card">
-        <div class="auditor-card-title">The AI Auditor</div>
-        <div class="auditor-card-tagline">Your AI stack is underperforming. We'll prove it.</div>
-        <div class="auditor-card-desc">Independent AI systems audit for Indian startups. We find what's slowing your AI down and tell you exactly what to fix — delivered in 5 days.</div>
+      <div class="leaps-win-body">
+        <iframe
+          src="https://theaiauditor.in"
+          id="auditor-iframe"
+          title="The AI Auditor - live product"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin"
+        ></iframe>
         <a href="https://theaiauditor.in" target="_blank" rel="noopener" class="leaps-win-overlay">
           <span class="leaps-win-overlay-label">Open The AI Auditor ↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Heuretos sub-window (floats above the terminal body) -->
+    <div class="sub-window" id="heuretos-window">
+      <div class="leaps-win-chrome">
+        <div class="term-dots">
+          <div class="term-dot dot-red"></div>
+          <div class="term-dot dot-yellow"></div>
+          <div class="term-dot dot-green"></div>
+        </div>
+        <div class="leaps-win-url">https://heuretos.com</div>
+        <a href="https://heuretos.com" target="_blank" rel="noopener" class="leaps-win-open">Open ↗</a>
+      </div>
+      <div class="leaps-win-body">
+        <iframe
+          src="https://heuretos.com"
+          id="heuretos-iframe"
+          title="Heuretos - shut down product"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin"
+        ></iframe>
+        <a href="https://heuretos.com" target="_blank" rel="noopener" class="leaps-win-overlay">
+          <span class="leaps-win-overlay-label">Open Heuretos ↗</span>
         </a>
       </div>
     </div>
@@ -749,32 +745,36 @@
         return { show, hide };
       }
 
-      const leapsSub = createSubWindow('leaps-window', 'leaps-iframe');
+      const leapsSub    = createSubWindow('leaps-window', 'leaps-iframe');
+      const auditorSub  = createSubWindow('auditor-window', 'auditor-iframe');
+      const heuretosSub = createSubWindow('heuretos-window', 'heuretos-iframe');
 
-      function showLeapsWindow() { leapsSub.show(); }
-      function hideLeapsWindow() { leapsSub.hide(); }
+      function showLeapsWindow()   { leapsSub.show(); }
+      function hideLeapsWindow()   { leapsSub.hide(); }
+      function showAuditorWindow() { auditorSub.show(); }
+      function hideAuditorWindow() { auditorSub.hide(); }
+      function showHeuretosWindow() { heuretosSub.show(); }
+      function hideHeuretosWindow() { heuretosSub.hide(); }
 
-      // The AI Auditor sends X-Frame-Options: DENY, so it can't be iframed
-      // like Leaps — this window is a static preview card instead, sized
-      // by CSS rather than scaled against an iframe.
-      const auditorWin = document.getElementById('auditor-window');
-      function showAuditorWindow() { auditorWin.classList.add('visible'); }
-      function hideAuditorWindow() { auditorWin.classList.remove('visible'); }
+      // Going back from the Heuretos step lands on the AI Auditor step —
+      // undo both this step's own reveal and the previous step's "before".
+      function undoHeuretosStep() { hideHeuretosWindow(); showAuditorWindow(); }
 
       /* ── Session steps ──
          Each step is exactly one scroll/key gesture forward or back.
          before/after fire going forward; undo reverses after's effect
-         when the step is removed by scrolling back past it. */
+         (and any before from this step) when it's removed by scrolling
+         back past it. */
       const STEPS = [
         { cmd: 'whoami' },
         { cmd: 'ls --sections' },
         { cmd: 'cat about.txt' },
-        { cmd: 'cat leaps.md' },
-        { cmd: 'open leaps.to',         after: showLeapsWindow,   undo: hideLeapsWindow },
-        { cmd: 'cat experience.md',     before: hideLeapsWindow,  undo: showLeapsWindow },
-        { cmd: 'cat ventures.md' },
-        { cmd: 'open theaiauditor.in',  after: showAuditorWindow, undo: hideAuditorWindow },
-        { cmd: 'cat projects.md',       before: hideAuditorWindow, undo: showAuditorWindow },
+        { cmd: 'cat leaps.md && open leaps.to',           after: showLeapsWindow,    undo: hideLeapsWindow },
+        { cmd: 'cat experience.md',                       before: hideLeapsWindow,   undo: showLeapsWindow },
+        { cmd: 'cat ventures.md && cat theaiauditor.md && open theaiauditor.in',
+                                                            after: showAuditorWindow, undo: hideAuditorWindow },
+        { cmd: 'cat heuretos.md && open heuretos.com',     before: hideAuditorWindow, after: showHeuretosWindow, undo: undoHeuretosStep },
+        { cmd: 'cat projects.md',                         before: hideHeuretosWindow, undo: showHeuretosWindow },
         { cmd: 'cat stack.txt' },
         { cmd: 'contact --all' },
       ];
@@ -837,15 +837,11 @@
           ['line-output dim', 'LinkedIn (multi-step, turn-based) + Ashby (single-form,'],
           ['line-output dim', 'open-ended fields) unified under one architecture.'],
           ['line-output empty', ''],
-        ],
-
-        /* 4: open leaps.to */
-        [
           ['line-output mt', 'Opening <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://leaps.to</a> ...'],
           ['line-output empty', ''],
         ],
 
-        /* 5: cat experience.md */
+        /* 4: cat experience.md */
         [
           ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer(Advisory) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Jan 2026'],
           ['line-output empty', ''],
@@ -877,7 +873,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 6: cat ventures.md */
+        /* 5: cat ventures.md && cat theaiauditor.md && open theaiauditor.in */
         [
           ['line-output bright mt', '# Ventures &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; things I built outside the day job'],
           ['line-output empty', ''],
@@ -889,7 +885,13 @@
           ['line-output', '  delivered in 5 days.'],
           ['line-output dim', '  "Your AI stack is underperforming. We\'ll prove it."'],
           ['line-output empty', ''],
-          ['line-output bright', 'Heuretos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">heuretos.com ↗</a>'],
+          ['line-output mt', 'Opening <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://theaiauditor.in</a> ...'],
+          ['line-output empty', ''],
+        ],
+
+        /* 6: cat heuretos.md && open heuretos.com */
+        [
+          ['line-output bright mt', 'Heuretos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">heuretos.com ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; Shut down'],
           ['line-output empty', ''],
           ['line-output', '  AI research assistant that turned raw sources into structured'],
@@ -902,15 +904,11 @@
           ['line-output dim', '  Taught me how to architect multi-agent systems under real'],
           ['line-output dim', '  constraints — and when to walk away from a working product.'],
           ['line-output empty', ''],
-        ],
-
-        /* 7: open theaiauditor.in */
-        [
-          ['line-output mt', 'Opening <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://theaiauditor.in</a> ...'],
+          ['line-output mt', 'Opening <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://heuretos.com</a> ...'],
           ['line-output empty', ''],
         ],
 
-        /* 8: cat projects.md */
+        /* 7: cat projects.md */
         [
           ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source'],
@@ -939,7 +937,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 9: cat stack.txt */
+        /* 8: cat stack.txt */
         [
           ['line-output dim mt', '# what I shipped with — and what I learned'],
           ['line-output empty', ''],
@@ -959,7 +957,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 10: contact --all */
+        /* 9: contact --all */
         [
           ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
           ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
@@ -1048,7 +1046,7 @@
             }
             // Live-product reveals (Leaps / The AI Auditor) get a beat to
             // appear and a guaranteed minimum hold so they don't flash by.
-            if (step.after === showLeapsWindow || step.after === showAuditorWindow) {
+            if (step.after === showLeapsWindow || step.after === showAuditorWindow || step.after === showHeuretosWindow) {
               setTimeout(function () {
                 step.after();
                 setTimeout(finish, 1600);
@@ -1117,6 +1115,7 @@
               state.busy     = false;
               hideLeapsWindow();
               hideAuditorWindow();
+              hideHeuretosWindow();
 
               // Reset progress
               updateProgress();
