@@ -320,33 +320,8 @@
       height: 900px;
       border: none;
       transform-origin: top left;
-      pointer-events: none;
+      pointer-events: auto;
     }
-
-    .leaps-win-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .leaps-win-overlay-label {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #e8e8e8;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.18);
-      padding: 0.55rem 1.3rem;
-      border-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .leaps-win-overlay:hover .leaps-win-overlay-label { opacity: 1; }
   </style>
 </head>
 <body>
@@ -376,9 +351,6 @@
           loading="lazy"
           sandbox="allow-scripts allow-same-origin"
         ></iframe>
-        <a href="https://leaps.to" target="_blank" rel="noopener" class="leaps-win-overlay">
-          <span class="leaps-win-overlay-label">Open Leaps ↗</span>
-        </a>
       </div>
     </div>
 
@@ -401,9 +373,6 @@
           loading="lazy"
           sandbox="allow-scripts allow-same-origin"
         ></iframe>
-        <a href="https://theaiauditor.in" target="_blank" rel="noopener" class="leaps-win-overlay">
-          <span class="leaps-win-overlay-label">Open The AI Auditor ↗</span>
-        </a>
       </div>
     </div>
 
@@ -426,9 +395,6 @@
           loading="lazy"
           sandbox="allow-scripts allow-same-origin"
         ></iframe>
-        <a href="https://heuretos.com" target="_blank" rel="noopener" class="leaps-win-overlay">
-          <span class="leaps-win-overlay-label">Open Heuretos ↗</span>
-        </a>
       </div>
     </div>
 
