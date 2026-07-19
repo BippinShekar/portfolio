@@ -743,10 +743,6 @@
       function showHeuretosWindow() { heuretosSub.show(); }
       function hideHeuretosWindow() { heuretosSub.hide(); }
 
-      // Going back from the experience.md step lands on the Leaps step —
-      // undo both this step's own reveal and the previous step's "before".
-      function undoExperienceStep() { hideAuditorWindow(); showLeapsWindow(); }
-
       // Going back from the Heuretos step lands on the AI Auditor step —
       // undo both this step's own reveal and the previous step's "before".
       function undoHeuretosStep() { hideHeuretosWindow(); showAuditorWindow(); }
@@ -761,7 +757,8 @@
         { cmd: 'ls --sections' },
         { cmd: 'cat about.txt' },
         { cmd: 'cat leaps.md && open leaps.to',            after: showLeapsWindow,    undo: hideLeapsWindow },
-        { cmd: 'cat experience.md && open theaiauditor.in', before: hideLeapsWindow,   after: showAuditorWindow, undo: undoExperienceStep },
+        { cmd: 'cat experience.md',                        before: hideLeapsWindow,   undo: showLeapsWindow },
+        { cmd: 'cat auditor.md && open theaiauditor.in',   after: showAuditorWindow, undo: hideAuditorWindow },
         { cmd: 'cat heuretos.md && open heuretos.com',      before: hideAuditorWindow, after: showHeuretosWindow, undo: undoHeuretosStep },
         { cmd: 'cat projects.md',                          before: hideHeuretosWindow, undo: showHeuretosWindow },
         { cmd: 'cat stack.txt' },
@@ -776,7 +773,7 @@
           ['line-output bright mt', 'D Bippin Shekar Goud'],
           ['line-output dim',       'Founder &amp; Lead Engineer, Leaps'],
           ['line-output empty',     ''],
-          ['line-output', 'Two founding engineer roles, one independent AI consultancy.'],
+          ['line-output', 'Three founding engineer roles, one active AI consultancy.'],
           ['line-output', 'Built T2SQL engines, agentic VoC pipelines, and an autonomous'],
           ['line-output', 'job application system from scratch.'],
           ['line-output empty', ''],
@@ -786,8 +783,8 @@
 
         /* 1: ls --sections */
         [
-          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md &nbsp;&nbsp;&nbsp; heuretos.md'],
-          ['line-output',    'projects.md &nbsp; stack.txt &nbsp;&nbsp;&nbsp; contact'],
+          ['line-output mt', 'about.txt &nbsp;&nbsp;&nbsp; leaps.md &nbsp;&nbsp;&nbsp;&nbsp; experience.md &nbsp;&nbsp;&nbsp; auditor.md'],
+          ['line-output',    'heuretos.md &nbsp; projects.md &nbsp; stack.txt &nbsp;&nbsp;&nbsp; contact'],
           ['line-output empty', ''],
         ],
 
@@ -810,7 +807,7 @@
         /* 3: cat leaps.md */
         [
           ['line-output bright mt', '# Leaps &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://leaps.to" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">leaps.to ↗</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; Closed Alpha &nbsp;&nbsp; Since Dec 2025'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Closed Alpha &nbsp;&nbsp; Since Jan 2026'],
           ['line-output dim', 'Role &nbsp;&nbsp;&nbsp;&nbsp; Founder &amp; Lead Engineer'],
           ['line-output empty', ''],
           ['line-output', 'Job hunting is mostly noise. Leaps replaces volume with fit:'],
@@ -829,22 +826,17 @@
           ['line-output empty', ''],
         ],
 
-        /* 4: cat experience.md && open theaiauditor.in */
+        /* 4: cat experience.md */
         [
-          ['line-output bright mt', 'The AI Auditor &nbsp;&nbsp;&nbsp;&nbsp; · &nbsp; Independent AI Consultant &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Present'],
-          ['line-output dim', '  <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">theaiauditor.in ↗</a>'],
+          ['line-output bright mt', 'Pulsegen.io &nbsp; · &nbsp; Founding AI Engineer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nov 2025 - Jan 2026'],
           ['line-output empty', ''],
-          ['line-output', '  Auditing and rebuilding AI systems for early-stage startups —'],
-          ['line-output', '  root-causing failures in production LLM pipelines, retrieval'],
-          ['line-output', '  systems, and agentic architectures.'],
-          ['line-output empty', ''],
-          ['line-output dim', '  [client] Pulsegen.io &mdash; analytics bot'],
+          ['line-output bright', '  Analytics bot'],
           ['line-output', '  Rebuilt a stateless, prompt-based bot into a full agentic'],
           ['line-output', '  TypeScript system over unstructured MongoDB. Text-to-Mongo'],
           ['line-output', '  query gen + contextual memory layer.'],
           ['line-output green', '  Latency: 80s -> 40-50s &nbsp; (40% cut)'],
           ['line-output empty', ''],
-          ['line-output dim', '  [client] Pulsegen.io &mdash; VoC engine'],
+          ['line-output bright', '  VoC engine'],
           ['line-output', '  LLM-driven engine turning unstructured customer feedback'],
           ['line-output', '  into decision-ready product insights.'],
           ['line-output green', '  Throughput: 33x &nbsp;&nbsp; Scale: 100K+ inputs/day in production'],
@@ -868,11 +860,25 @@
           ['line-output green', '  Conversation depth: 4 -> 20+ turns before context exhaustion'],
           ['line-output', '  LangChain -> LangGraph -> direct SDK (removed all black boxes).'],
           ['line-output empty', ''],
+        ],
+
+        /* 5: cat auditor.md && open theaiauditor.in */
+        [
+          ['line-output bright mt', 'The AI Auditor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">theaiauditor.in ↗</a>'],
+          ['line-output dim', 'Status &nbsp;&nbsp; Active · Independent Practice &nbsp;&nbsp; Since Nov 2025'],
+          ['line-output empty', ''],
+          ['line-output', '  Auditing and rebuilding AI systems for early-stage startups —'],
+          ['line-output', '  root-causing failures in production LLM pipelines, retrieval'],
+          ['line-output', '  systems, and agentic architectures.'],
+          ['line-output empty', ''],
+          ['line-output dim', '  First engagement, Pulsegen.io, turned into a full-time offer.'],
+          ['line-output dim', '  Runs alongside Leaps now — audits picked up case by case.'],
+          ['line-output empty', ''],
           ['line-output mt', 'Opening <a href="https://theaiauditor.in" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">https://theaiauditor.in</a> ...'],
           ['line-output empty', ''],
         ],
 
-        /* 5: cat heuretos.md && open heuretos.com */
+        /* 6: cat heuretos.md && open heuretos.com */
         [
           ['line-output bright mt', 'Heuretos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://heuretos.com" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">heuretos.com ↗</a>'],
           ['line-output dim', 'Status &nbsp;&nbsp; Shut down'],
@@ -891,36 +897,47 @@
           ['line-output empty', ''],
         ],
 
-        /* 6: cat projects.md */
+        /* 7: cat projects.md */
         [
           ['line-output bright mt', 'Askr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://github.com/BippinShekar/askr" target="_blank" rel="noopener" style="color:#d4a017;text-decoration:none;">github.com/BippinShekar/askr ↗</a>'],
-          ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source'],
+          ['line-output dim', 'Status &nbsp;&nbsp; In Development · Open Source · Homebrew'],
           ['line-output empty', ''],
-          ['line-output', '  Autonomous session orchestration for Claude Code. Started as a'],
+          ['line-output', '  Autonomous session orchestrator for Claude Code. Started as a'],
           ['line-output', '  personal fix for losing context mid-task — grew into something'],
           ['line-output', '  bigger: continuity across sessions and across a whole team.'],
           ['line-output empty', ''],
           ['line-output bright', '  Session orchestration'],
-          ['line-output', '  Monitors sessions live, auto-checkpoints near the context/quota'],
-          ['line-output', '  limit, and resumes new sessions with full handoff context.'],
-          ['line-output', '  Always-on launchd daemon keeps macOS from sleeping mid-run.'],
+          ['line-output', '  Watches the live transcript, checkpoints at ~90% context or'],
+          ['line-output', '  near quota exhaustion, commits full handover state to git, and'],
+          ['line-output', '  starts the next session already caught up — no re-explaining.'],
+          ['line-output', '  Always-on launchd daemon (+ caffeinate) keeps macOS from sleeping'],
+          ['line-output', '  mid-run.'],
           ['line-output empty', ''],
           ['line-output bright', '  Project state, shared'],
           ['line-output', '  Commits structured markdown + JSONL to git — decisions,'],
-          ['line-output', '  implementation notes, architecture, goals — so any teammate'],
-          ['line-output', '  gets full visibility on pull, no standup required.'],
+          ['line-output', '  implementation log, architecture, goals, blockers — union-merge'],
+          ['line-output', '  safe across a team, so anyone gets full visibility on pull, no'],
+          ['line-output', '  standup required.'],
           ['line-output empty', ''],
           ['line-output bright', '  Goals + Q&amp;A'],
           ['line-output', '  Haiku suggests next goals from the last handover and tracks'],
-          ['line-output', '  completion against actual work. An `ask` CLI answers codebase'],
-          ['line-output', '  questions from a snapshot during quota resets.'],
+          ['line-output', '  completion across sessions. An `ask` CLI answers codebase'],
+          ['line-output', '  questions from a snapshot during quota resets — cto / ceo /'],
+          ['line-output', '  debug / deep / quick / web modes, ~$0.001/query.'],
+          ['line-output empty', ''],
+          ['line-output bright', '  Implementation guard'],
+          ['line-output', '  Blocks a Write/Edit before it lands — first new file, third'],
+          ['line-output', '  file edit in a session, or a change to an architecture-flagged'],
+          ['line-output', '  shared interface — and forces Claude to self-correct instead of'],
+          ['line-output', '  drifting from the agreed design.'],
           ['line-output empty', ''],
           ['line-output dim', '  Status bar widget (Cursor / VS Code) for live context % and'],
-          ['line-output dim', '  quota countdown. Discord notifications in progress.'],
+          ['line-output dim', '  quota countdown. Discord notifications for checkpoints, resumes,'],
+          ['line-output dim', '  and daily reports — done.'],
           ['line-output empty', ''],
         ],
 
-        /* 7: cat stack.txt */
+        /* 8: cat stack.txt */
         [
           ['line-output dim mt', '# what I shipped with — and what I learned'],
           ['line-output empty', ''],
@@ -940,7 +957,7 @@
           ['line-output empty', ''],
         ],
 
-        /* 8: contact --all */
+        /* 9: contact --all */
         [
           ['line-output bright mt', 'Email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="mailto:bippinshekar@gmail.com" style="color:#e8e8e8;text-decoration:none;">bippinshekar@gmail.com</a>'],
           ['line-output bright',    'Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="tel:+919100863981" style="color:#e8e8e8;text-decoration:none;">+91 9100 863 981</a>'],
